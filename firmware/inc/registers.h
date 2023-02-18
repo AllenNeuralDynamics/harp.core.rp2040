@@ -1,9 +1,9 @@
 #ifndef REGISTERS_H
 #define REGISTERS_H
-#include <reg_names.h>
+#include <stdint.h>
 
 /**
- * \brief RegNames enum where the name is the name of the register and the
+ * \brief enum where the name is the name of the register and the
  *        value is the address according to the harp protocol spec.
  */
 enum RegNames
@@ -26,31 +26,25 @@ enum RegNames
     TIMESTAMP_OFFSET = 15
 };
 
-/**
- * \brief struct representing the register data.
- */
-#pragma pack(push)
-#pragma pack(1)
-struct RegNames
+struct Registers
 {
-    const uint16_t R_WHO_AM_I;
-    const uint8_t R_HW_VERSION_H;
-    const uint8_t R_HW_VERSION_L;
-    const uint8_t R_ASSEMBLY_VERSION;
-    const uint8_t R_HARP_VERSION_H;
-    const uint8_t R_HARP_VERSION_L;
-    const uint8_t R_FW_VERSION_H;
-    const uint8_t R_FW_VERSION_L;
-    volatile uint32_t R_TIMESTAMP_SECOND;
-    volatile uint16_t R_TIMESTAMP_MICRO;
-    volatile uint8_t R_OPERATION_CTRL;
-    volatile uint8_t R_RESET_DEF;
-    volatile uint8_t R_DEVICE_NAME;
-    volatile uint16_t R_SERIAL_NUMBER;
-    volatile uint8_t R_CLOCK_CONFIG;
-    volatile uint8_t R_TIMESTAMP_OFFSET;
+    const uint16_t R_WHO_AM_I __attribute__((aligned(4)));
+    const uint8_t R_HW_VERSION_H __attribute__((aligned(4)));
+    const uint8_t R_HW_VERSION_L __attribute__((aligned(4)));
+    const uint8_t R_ASSEMBLY_VERSION __attribute__((aligned(4)));
+    const uint8_t R_HARP_VERSION_H __attribute__((aligned(4)));
+    const uint8_t R_HARP_VERSION_L __attribute__((aligned(4))) ;
+    const uint8_t R_FW_VERSION_H __attribute__((aligned(4)));
+    const uint8_t R_FW_VERSION_L __attribute__((aligned(4)));
+    volatile uint32_t R_TIMESTAMP_SECOND __attribute__((aligned(4)));
+    volatile uint16_t R_TIMESTAMP_MICRO __attribute__((aligned(4)));
+    volatile uint8_t R_OPERATION_CTRL __attribute__((aligned(4)));
+    volatile uint8_t R_RESET_DEF __attribute__((aligned(4)));
+    volatile uint8_t R_DEVICE_NAME __attribute__((aligned(4)));
+    volatile uint16_t R_SERIAL_NUMBER __attribute__((aligned(4)));
+    volatile uint8_t R_CLOCK_CONFIG __attribute__((aligned(4)));
+    volatile uint8_t R_TIMESTAMP_OFFSET __attribute__((aligned(4)));
 };
-#pragma pack(pop)
 
 /**
  * \brief struct representing reg data in contiguous 32-bit word-aligned memory.
@@ -62,22 +56,22 @@ struct RegNames
  *       substantial footprint.
  *
  * \code{.cpp}
- * reg_mem = RegMemory{0x0000, 0x00, 0x00, 0x00,
-                       0x00, 0x00, 0x00, 0x00,
-                       0x00000000, 0x0000, 0x00, 0x00,
-                       0x00, 0x0000, 0x00, 0x00} ;
+ * RegMemory reg_mem = RegMemory{0x0000, 0x00, 0x00, 0x00,
+                                 0x00, 0x00, 0x00, 0x00,
+                                 0x00000000, 0x0000, 0x00, 0x00,
+                                 0x00, 0x0000, 0x00, 0x00} ;
 *
 * // Conventional struct access:
 * printf("Device ID: %d", reg_mem.names.R_WHO_AM_I)
 * printf("Timestamp sec: %d", reg_mem.names.R_TIMESTAMP_SECOND)
 *
 * // Access by protocol address.
-* printf"Device ID: %d", reg_mem.mem[RegNames.WHO_AM_I])
+* printf"Device ID: %d", reg_mem.mem[RegNames::WHO_AM_I])
  * \endcode
  */
 union RegMemory
 {
-    RegNames names;
-    uint32_t mem[sizeof(names)];
+    Registers names;
+    uint32_t mem[sizeof(names)/sizeof(uint32_t)];
 };
 #endif //REGISTERS_H
