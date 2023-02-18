@@ -1,6 +1,7 @@
 #ifndef REGISTERS_H
 #define REGISTERS_H
 #include <stdint.h>
+#include <stdalign.h>
 
 /**
  * \brief enum where the name is the name of the register and the
@@ -28,22 +29,22 @@ enum RegNames
 
 struct Registers
 {
-    const uint16_t R_WHO_AM_I __attribute__((aligned(4)));
-    const uint8_t R_HW_VERSION_H __attribute__((aligned(4)));
-    const uint8_t R_HW_VERSION_L __attribute__((aligned(4)));
-    const uint8_t R_ASSEMBLY_VERSION __attribute__((aligned(4)));
-    const uint8_t R_HARP_VERSION_H __attribute__((aligned(4)));
-    const uint8_t R_HARP_VERSION_L __attribute__((aligned(4))) ;
-    const uint8_t R_FW_VERSION_H __attribute__((aligned(4)));
-    const uint8_t R_FW_VERSION_L __attribute__((aligned(4)));
-    volatile uint32_t R_TIMESTAMP_SECOND __attribute__((aligned(4)));
-    volatile uint16_t R_TIMESTAMP_MICRO __attribute__((aligned(4)));
-    volatile uint8_t R_OPERATION_CTRL __attribute__((aligned(4)));
-    volatile uint8_t R_RESET_DEF __attribute__((aligned(4)));
-    volatile uint8_t R_DEVICE_NAME __attribute__((aligned(4)));
-    volatile uint16_t R_SERIAL_NUMBER __attribute__((aligned(4)));
-    volatile uint8_t R_CLOCK_CONFIG __attribute__((aligned(4)));
-    volatile uint8_t R_TIMESTAMP_OFFSET __attribute__((aligned(4)));
+    alignas(uint32_t) const uint16_t R_WHO_AM_I;
+    alignas(uint32_t) const uint8_t R_HW_VERSION_H;
+    alignas(uint32_t) const uint8_t R_HW_VERSION_L;
+    alignas(uint32_t) const uint8_t R_ASSEMBLY_VERSION;
+    alignas(uint32_t) const uint8_t R_HARP_VERSION_H;
+    alignas(uint32_t) const uint8_t R_HARP_VERSION_L ;
+    alignas(uint32_t) const uint8_t R_FW_VERSION_H;
+    alignas(uint32_t) const uint8_t R_FW_VERSION_L;
+    alignas(uint32_t) volatile uint32_t R_TIMESTAMP_SECOND;
+    alignas(uint32_t) volatile uint16_t R_TIMESTAMP_MICRO;
+    alignas(uint32_t) volatile uint8_t R_OPERATION_CTRL;
+    alignas(uint32_t) volatile uint8_t R_RESET_DEF;
+    alignas(uint32_t) volatile uint8_t R_DEVICE_NAME;
+    alignas(uint32_t) volatile uint16_t R_SERIAL_NUMBER;
+    alignas(uint32_t) volatile uint8_t R_CLOCK_CONFIG;
+    alignas(uint32_t) volatile uint8_t R_TIMESTAMP_OFFSET;
 };
 
 /**
