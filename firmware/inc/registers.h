@@ -27,6 +27,8 @@ enum RegNames
     TIMESTAMP_OFFSET = 15
 };
 
+// TODO: should these all be an array of pointers??
+//  Then we could remove byte alignment requirement.
 struct Registers
 {
     alignas(uint32_t) const uint16_t R_WHO_AM_I;
@@ -41,7 +43,7 @@ struct Registers
     alignas(uint32_t) volatile uint16_t R_TIMESTAMP_MICRO;
     alignas(uint32_t) volatile uint8_t R_OPERATION_CTRL;
     alignas(uint32_t) volatile uint8_t R_RESET_DEF;
-    alignas(uint32_t) volatile uint8_t R_DEVICE_NAME;
+    alignas(uint32_t) volatile char (*R_DEVICE_NAME)[25];
     alignas(uint32_t) volatile uint16_t R_SERIAL_NUMBER;
     alignas(uint32_t) volatile uint8_t R_CLOCK_CONFIG;
     alignas(uint32_t) volatile uint8_t R_TIMESTAMP_OFFSET;

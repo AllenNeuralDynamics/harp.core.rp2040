@@ -1,14 +1,17 @@
 #include <registers.h>
+#include <reg_bits.h>
 #include <pico/stdlib.h>
 #include <cstdio>
 
 
+// Create device name array.
+char device_name[25];
 
 // Create Registers.
 RegMemory reg_mem = RegMemory{1216, 0x00, 0x01, 0x02,
                               0x03, 0x04, 0x05, 0x06,
                               0x00000007, 0x0008, 0x09, 0x0a,
-                              0x0b, 0xCAFE, 0x0c, 0x0d};
+                              &device_name, 0xCAFE, 0x0c, 0x0d};
 
 
 // Core0 main.
