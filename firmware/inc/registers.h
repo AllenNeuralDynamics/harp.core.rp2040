@@ -1,7 +1,8 @@
 #ifndef REGISTERS_H
 #define REGISTERS_H
 #include <stdint.h>
-#include <stdalign.h>
+
+static const uint8_t REG_COUNT = 16;
 
 /**
  * \brief enum where the name is the name of the register and the
@@ -27,54 +28,55 @@ enum RegNames
     TIMESTAMP_OFFSET = 15
 };
 
-// TODO: should these all be an array of pointers??
-//  Then we could remove byte alignment requirement.
-struct Registers
+
+struct RegValues
 {
-    alignas(uint32_t) const uint16_t R_WHO_AM_I;
-    alignas(uint32_t) const uint8_t R_HW_VERSION_H;
-    alignas(uint32_t) const uint8_t R_HW_VERSION_L;
-    alignas(uint32_t) const uint8_t R_ASSEMBLY_VERSION;
-    alignas(uint32_t) const uint8_t R_HARP_VERSION_H;
-    alignas(uint32_t) const uint8_t R_HARP_VERSION_L ;
-    alignas(uint32_t) const uint8_t R_FW_VERSION_H;
-    alignas(uint32_t) const uint8_t R_FW_VERSION_L;
-    alignas(uint32_t) volatile uint32_t R_TIMESTAMP_SECOND;
-    alignas(uint32_t) volatile uint16_t R_TIMESTAMP_MICRO;
-    alignas(uint32_t) volatile uint8_t R_OPERATION_CTRL;
-    alignas(uint32_t) volatile uint8_t R_RESET_DEF;
-    alignas(uint32_t) volatile char (*R_DEVICE_NAME)[25];
-    alignas(uint32_t) volatile uint16_t R_SERIAL_NUMBER;
-    alignas(uint32_t) volatile uint8_t R_CLOCK_CONFIG;
-    alignas(uint32_t) volatile uint8_t R_TIMESTAMP_OFFSET;
+    const uint16_t R_WHO_AM_I;
+    const uint8_t R_HW_VERSION_H;
+    const uint8_t R_HW_VERSION_L;
+    const uint8_t R_ASSEMBLY_VERSION;
+    const uint8_t R_HARP_VERSION_H;
+    const uint8_t R_HARP_VERSION_L ;
+    const uint8_t R_FW_VERSION_H;
+    const uint8_t R_FW_VERSION_L;
+    volatile uint32_t R_TIMESTAMP_SECOND;
+    volatile uint16_t R_TIMESTAMP_MICRO;
+    volatile uint8_t R_OPERATION_CTRL;
+    volatile uint8_t R_RESET_DEF;
+    volatile char R_DEVICE_NAME[25];
+    volatile uint16_t R_SERIAL_NUMBER;
+    volatile uint8_t R_CLOCK_CONFIG;
+    volatile uint8_t R_TIMESTAMP_OFFSET;
 };
 
-/**
- * \brief struct representing reg data in contiguous 32-bit word-aligned memory.
- *      Data can be accessed via name or protocol address.
- *
- * \note Storing the data in contiguous 32-bit word-aligned memory creates a
- *       larger memory footprint, but prevents the need to create a lookup
- *       table from name to memory location, which itself would also have a
- *       substantial footprint.
- *
- * \code{.cpp}
- * RegMemory reg_mem = RegMemory{0x0000, 0x00, 0x00, 0x00,
-                                 0x00, 0x00, 0x00, 0x00,
-                                 0x00000000, 0x0000, 0x00, 0x00,
-                                 0x00, 0x0000, 0x00, 0x00} ;
-*
-* // Conventional struct access:
-* printf("Device ID: %d", reg_mem.names.R_WHO_AM_I)
-* printf("Timestamp sec: %d", reg_mem.names.R_TIMESTAMP_SECOND)
-*
-* // Access by protocol address.
-* printf"Device ID: %d", reg_mem.mem[RegNames::WHO_AM_I])
- * \endcode
- */
-union RegMemory
+struct Registers
 {
-    Registers names;
-    uint32_t mem[sizeof(names)/sizeof(uint32_t)];
+    public:
+        Registers(uint16_t who_am_i, uint16_t hw_version,
+                  uint8_t assembly_version, uint16_t harp_version,
+                  uint16_t fw_version);
+        ~Registers();
+
+    RegValues regs_;
+    RegValues& regs = regs_;
+    // Lookup table. Might not be needed.
+    const volatile void* name2reg[REG_COUNT] =
+        {&regs_.R_WHO_AM_I,
+         &regs_.R_HW_VERSION_H,
+         &regs_.R_HW_VERSION_L,
+         &regs_.R_ASSEMBLY_VERSION,
+         &regs_.R_HARP_VERSION_H,
+         &regs_.R_HARP_VERSION_L,
+         &regs_.R_FW_VERSION_H,
+         &regs_.R_FW_VERSION_L,
+         &regs_.R_TIMESTAMP_SECOND,
+         &regs_.R_TIMESTAMP_MICRO,
+         &regs_.R_OPERATION_CTRL,
+         &regs_.R_RESET_DEF,
+         &regs_.R_DEVICE_NAME,
+         &regs_.R_SERIAL_NUMBER,
+         &regs_.R_CLOCK_CONFIG,
+         &regs_.R_TIMESTAMP_OFFSET};
 };
+
 #endif //REGISTERS_H

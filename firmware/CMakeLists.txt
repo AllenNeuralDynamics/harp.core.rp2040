@@ -7,6 +7,10 @@ project(harp_core_rp2040)
 # Enable try/catch exceptions. (Required for string parsing implementation.)
 set(PICO_CXX_ENABLE_EXCEPTIONS 1)
 
+# Use modern conventions like std::invoke
+set(CMAKE_CXX_STANDARD 17)
+
+
 # initialize the Raspberry Pi Pico SDK
 pico_sdk_init()
 
@@ -15,9 +19,13 @@ add_executable(${PROJECT_NAME}
 )
 
 
-#add_library(user_io_handler
-#    src/user_io_handler.cpp
-#)
+add_library(registers
+    src/registers.cpp
+)
+
+add_library(harp_core
+    src/harp_core.cpp
+)
 
 #add_library(core1_main
 #    src/core1_main.cpp
@@ -40,7 +48,8 @@ include_directories(inc)
 # Link libraries to the targets that need them.
 #target_link_libraries(<target> <lib0> <lib1>)
 #target_link_libraries(core1_main pico_stdlib)
-target_link_libraries(${PROJECT_NAME} pico_stdlib)
+target_link_libraries(harp_core registers)
+target_link_libraries(${PROJECT_NAME} pico_stdlib registers harp_core)
 #target_link_libraries(${PROJECT_NAME}
 #                      pico_stdlib motor_controller user_io_handler
 #                      pico_multicore core1_main)
