@@ -1,4 +1,6 @@
-#include <registers.h>
+#include <registers.h>  // do we need this at this level?
+#include <harp_core.h>
+#include <harp_message.h>
 #include <pico/stdlib.h>
 #include <cstdio>
 
@@ -11,14 +13,12 @@ const uint16_t harp_version = 0;
 const uint16_t fw_version = 0;
 
 // Create Registers.
+HarpCore core{who_am_i, hw_version, assembly_version, harp_version,
+              fw_version};
 /*
-RegMemory reg_mem = RegMemory{1216, 0x00, 0x01, 0x02,
-                              0x03, 0x04, 0x05, 0x06,
-                              0x00000007, 0x0008, 0x09, 0x0a,
-                              &device_name, 0xCAFE, 0x0c, 0x0d};
-*/
 Registers reg_mem{who_am_i, hw_version, assembly_version, harp_version,
                   fw_version};
+*/
 
 
 // Core0 main.
@@ -28,11 +28,16 @@ int main()
 
     while(true)
     {
-        reg_mem.regs.R_TIMESTAMP_SECOND = 10;  // works.
+        core.regs_.regs_.R_TIMESTAMP_SECOND = 10;  // works.
         // Struct access.
-        printf("WHO_AM_I (struct): %d\r\n",reg_mem.regs.R_TIMESTAMP_SECOND);
+        printf("WHO_AM_I (struct): %d\r\n", core.regs_.regs_.R_TIMESTAMP_SECOND);
         // enum access. Messy, but works.
-        printf("WHO_AM_I (ptr): %d\r\n",*((volatile uint32_t*)reg_mem.name2reg[RegNames::TIMESTAMP_SECOND]));
+        printf("WHO_AM_I (ptr): %d\r\n",*((volatile uint32_t*)core.regs_.name2reg[RegNames::TIMESTAMP_SECOND]));
+        // Callback trigger by handling a fake incoming message.
+        printf("WHO_AM_I (callback):");
+        msg_t msg{msg_type_t::READ, 10, RegNames::WHO_AM_I, 10,
+                  payload_type_t:: U8};//payload};
+        core.handle_message(msg);
         sleep_ms(3000);
     }
     return 0;

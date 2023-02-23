@@ -5,10 +5,12 @@
 #include <registers.h>
 #include <functional>  // for std::invoke
 
+#include <pico/stdlib.h> // TODO: remove this later.
 
-struct HarpCore
+
+class HarpCore
 {
-    public:
+public:
         HarpCore(uint16_t who_am_i, uint16_t hw_version,
                   uint8_t assembly_version, uint16_t harp_version,
                   uint16_t fw_version);
@@ -21,10 +23,14 @@ struct HarpCore
 
 /**
  * \brief entry point for handling incoming harp messages. Dispatches message
- *      to the appropriate handler.
+ *      to the appropriate handler. inline.
  */
-    void handle_message(msg_t& msg);
+    void handle_message(msg_t& msg)
+    {std::invoke(reg_handler_fns_[msg.address], this, msg);}
 
+    Registers regs_;
+
+private:
 /**
  * \brief a handler function per harp register. Handles read and write
  *      operations to that register.
@@ -46,7 +52,6 @@ struct HarpCore
     void handle_clock_config(msg_t& msg);
     void handle_timestamp_offset(msg_t& msg);
 
-    Registers regs_;
 
     // Function Table. Order matters since we will index into it with enums.
     MsgHandleMemberFn reg_handler_fns_[REG_COUNT] =

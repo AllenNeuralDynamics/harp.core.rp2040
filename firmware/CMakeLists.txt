@@ -48,7 +48,8 @@ include_directories(inc)
 # Link libraries to the targets that need them.
 #target_link_libraries(<target> <lib0> <lib1>)
 #target_link_libraries(core1_main pico_stdlib)
-target_link_libraries(harp_core registers)
+#target_link_libraries(harp_core registers)
+target_link_libraries(harp_core registers pico_stdlib)
 target_link_libraries(${PROJECT_NAME} pico_stdlib registers harp_core)
 #target_link_libraries(${PROJECT_NAME}
 #                      pico_stdlib motor_controller user_io_handler
