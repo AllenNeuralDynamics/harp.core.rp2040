@@ -8,7 +8,7 @@ static const uint8_t REG_COUNT = 16;
  * \brief enum where the name is the name of the register and the
  *        value is the address according to the harp protocol spec.
  */
-enum RegNames
+enum RegNames : uint8_t  // FIXME: make RegName
 {
     WHO_AM_I = 0,
     HW_VERSION_H = 1, // major hardware version
@@ -49,6 +49,12 @@ struct RegValues
     volatile uint8_t R_TIMESTAMP_OFFSET;
 };
 
+struct RegSpecs
+{
+    const volatile uint8_t* base_ptr;
+    const uint8_t num_bytes;
+};
+
 struct Registers
 {
     public:
@@ -59,24 +65,26 @@ struct Registers
 
     RegValues regs_;
     RegValues& regs = regs_;
-    // Lookup table. Might not be needed.
-    const volatile void* name2reg[REG_COUNT] =
-        {&regs_.R_WHO_AM_I,
-         &regs_.R_HW_VERSION_H,
-         &regs_.R_HW_VERSION_L,
-         &regs_.R_ASSEMBLY_VERSION,
-         &regs_.R_HARP_VERSION_H,
-         &regs_.R_HARP_VERSION_L,
-         &regs_.R_FW_VERSION_H,
-         &regs_.R_FW_VERSION_L,
-         &regs_.R_TIMESTAMP_SECOND,
-         &regs_.R_TIMESTAMP_MICRO,
-         &regs_.R_OPERATION_CTRL,
-         &regs_.R_RESET_DEF,
-         &regs_.R_DEVICE_NAME,
-         &regs_.R_SERIAL_NUMBER,
-         &regs_.R_CLOCK_CONFIG,
-         &regs_.R_TIMESTAMP_OFFSET};
+
+    // Lookup table. Necessary because data is not of equal size.
+    // TODO: generate this with static table generation.
+    const RegSpecs enum_to_reg_specs[REG_COUNT] =
+    {{(uint8_t*)&regs_.R_WHO_AM_I,         sizeof(regs_.R_WHO_AM_I)},
+     {(uint8_t*)&regs_.R_HW_VERSION_H,     sizeof(regs_.R_HW_VERSION_H)},
+     {(uint8_t*)&regs_.R_HW_VERSION_L,     sizeof(regs_.R_HW_VERSION_L)},
+     {(uint8_t*)&regs_.R_ASSEMBLY_VERSION, sizeof(regs_.R_ASSEMBLY_VERSION)},
+     {(uint8_t*)&regs_.R_HARP_VERSION_H,   sizeof(regs_.R_HARP_VERSION_H)},
+     {(uint8_t*)&regs_.R_HARP_VERSION_L,   sizeof(regs_.R_HW_VERSION_L)},
+     {(uint8_t*)&regs_.R_FW_VERSION_H,     sizeof(regs_.R_FW_VERSION_H)},
+     {(uint8_t*)&regs_.R_FW_VERSION_L,     sizeof(regs_.R_FW_VERSION_L)},
+     {(uint8_t*)&regs_.R_TIMESTAMP_SECOND, sizeof(regs_.R_TIMESTAMP_SECOND)},
+     {(uint8_t*)&regs_.R_TIMESTAMP_MICRO,  sizeof(regs_.R_TIMESTAMP_MICRO)},
+     {(uint8_t*)&regs_.R_OPERATION_CTRL,   sizeof(regs_.R_OPERATION_CTRL)},
+     {(uint8_t*)&regs_.R_RESET_DEF,        sizeof(regs_.R_RESET_DEF)},
+     {(uint8_t*)&regs_.R_DEVICE_NAME,      sizeof(regs_.R_DEVICE_NAME)},
+     {(uint8_t*)&regs_.R_SERIAL_NUMBER,    sizeof(regs_.R_SERIAL_NUMBER)},
+     {(uint8_t*)&regs_.R_CLOCK_CONFIG,     sizeof(regs_.R_CLOCK_CONFIG)},
+     {(uint8_t*)&regs_.R_TIMESTAMP_OFFSET, sizeof(regs_.R_TIMESTAMP_OFFSET)}};
 };
 
 #endif //REGISTERS_H
