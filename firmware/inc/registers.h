@@ -64,7 +64,7 @@ struct Registers
         ~Registers();
 
     RegValues regs_;
-    RegValues& regs = regs_;
+//    RegValues& regs = regs_;
 
     // Lookup table. Necessary because data is not of equal size.
     // TODO: generate this with static table generation.

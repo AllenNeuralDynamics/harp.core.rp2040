@@ -6,30 +6,46 @@
 #include <arm_regs.h>
 #include <functional>  // for std::invoke
 
-#include <pico/stdlib.h> // TODO: remove this later.
+#include <hardware/structs/timer.h>
+#include <hardware/timer.h>
+#include <tusb.h>
 
 
+/**
+ * \brief Harp Core that handles management of common bank registers.
+*       Implemented as a singleton to simplify attaching interrupts (and since
+*       you can only have one per device.
+ */
 class HarpCore
 {
+// Make constructor private to prevent creating instances outside of init().
+private:
+    HarpCore(uint16_t who_am_i, uint16_t hw_version,
+             uint8_t assembly_version, uint16_t harp_version,
+             uint16_t fw_version);
+
+    ~HarpCore();
+
 public:
-        HarpCore(uint16_t who_am_i, uint16_t hw_version,
-                  uint8_t assembly_version, uint16_t harp_version,
-                  uint16_t fw_version);
-        ~HarpCore();
+    HarpCore() = delete;  // Disable default constructor.
+    HarpCore(HarpCore& other) = delete; // Disable copy constructor.
+    void operator=(const HarpCore& other) = delete; // Disable assignment operator.
+
+/**
+ * \brief initialize the harp core singleton with parameters.
+ */
+    static HarpCore& init(uint16_t who_am_i, uint16_t hw_version,
+                          uint8_t assembly_version, uint16_t harp_version,
+                          uint16_t fw_version);
+
+    static HarpCore& core_;
+    static HarpCore& instance() {return core_;}
 
     // Create a typedef so we can create an array of member function ptrs.
     // MsgHandleMemberFn points to a harp core member fn that takes (msg_t&)
     // https://isocpp.org/wiki/faq/pointers-to-members#array-memfnptrs
     typedef void (HarpCore::*RegReadMemberFn)(RegNames reg);
     typedef void (HarpCore::*RegWriteMemberFn)(msg_t& mst);
-
-/**
- * \brief parse the serial data into message fields. Return a msg_header_t.
- *  inline.
- */
-// UNUSED
-//    msg_header_t& get_msg_header_from_buffer()
-//    {return *((msg_header_t*)(&rx_buffer_));}
 
 /**
  * \brief entry point for handling incoming harp messages. Dispatches message
@@ -51,14 +67,16 @@ public:
     void read_from_reg(RegNames reg)
     {std::invoke(reg_read_fns_[reg], this, reg);}
 
-/**
- *  \brief registers.
- */
-    Registers regs_;  // TODO: should be private.
+
 /**
  * \brief data is read from serial port into the the rx_buffer.
  */
     uint8_t rx_buffer_[MAX_PACKET_SIZE];  // TODO: should be private.
+
+/**
+ * \brief reference to the struct of reg values for easy access.
+ */
+    RegValues& regs = regs_.regs_;
 
 private:
 
@@ -84,7 +102,10 @@ private:
 
     void write_to_read_only_reg_error(msg_t& msg);
 
-
+/**
+ *  \brief registers.
+ */
+    Registers regs_;
 
     // Function Tables. Order matters since we will index into it with enums.
     RegReadMemberFn reg_read_fns_[REG_COUNT] =

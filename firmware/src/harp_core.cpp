@@ -1,19 +1,27 @@
 #include <harp_core.h>
 
+HarpCore& HarpCore::init(uint16_t who_am_i, uint16_t hw_version,
+                         uint8_t assembly_version, uint16_t harp_version,
+                         uint16_t fw_version)
+{
+    // Create the singleton instance using the private constructor.
+    static HarpCore core_(who_am_i, hw_version, assembly_version, harp_version,
+                         fw_version);
+    return core_;
+}
+
 HarpCore::HarpCore(uint16_t who_am_i, uint16_t hw_version,
                      uint8_t assembly_version, uint16_t harp_version,
                      uint16_t fw_version)
 :regs_{who_am_i, hw_version, assembly_version, harp_version, fw_version}
 {
+// TODO: Consider making the rest of this boilerplate setup virtual so it can
+//  be device-agnostic.
 
-// Setup FTDI-based hardware uart with hardware flow control enabled.
-// Trigger an interrupt wh
 
-// Setup SYSTICK to count at 1[us] intervals up to 1e6.
-// https://electronics.stackexchange.com/questions/305423/how-do-i-set-systick-to-1-ms
-    // TODO
-// Setup SYSTICK to trigger an interrupt a 1[us] intervals to update the time.
-    SYST_CSRbits.ENABLE = 1;
+// Configure USB-Serial
+// TODO: figure out if TinyUSB has a sendnow feature.
+// Setup DMA for moving data from registers to serial port TX.
 }
 
 HarpCore::~HarpCore(){}
@@ -25,19 +33,6 @@ void HarpCore::handle_rx_buffer_message()
     msg_header_t& header = *((msg_header_t*)(&rx_buffer_));
     void* payload = rx_buffer_ + header.payload_base_index_offset();
     uint8_t& checksum = *(rx_buffer_ + header.checksum_index_offset());
-    /*
-    printf("I am a Pi pico with ID: %d. Data from this message (%d bytes) is: \r\n",
-           regs_.regs_.R_WHO_AM_I, msg.payload_length());
-    printf("msg_type: %d\r\n", msg.header.type);
-    printf("raw_length: %d\r\n", msg.header.raw_length);
-    printf("address: %d\r\n", msg.header.address);
-    printf("port: %d\r\n", msg.header.port);
-    printf("payload_type: %d\r\n", msg.header.payload_type);
-    for (auto i = 0; i < msg.payload_length(); ++i)
-        printf("%d, ", ((uint8_t*)(msg.payload))[i]);
-    printf("\r\n");
-    // TODO: reply to this message by queuing RX data out.
-    */
     // TODO: handle error checking.
 
     if (header.has_timestamp())
@@ -46,6 +41,18 @@ void HarpCore::handle_rx_buffer_message()
         uint16_t timestamp_usec = uint16_t(*(rx_buffer_ + 9));
         timestamped_msg_t msg{header, timestamp_sec, timestamp_usec,
                               payload, checksum};
+
+        printf("I am a Pi pico with ID: %d. Data from this message (%d bytes) is: \r\n",
+               regs_.regs_.R_WHO_AM_I, msg.payload_length());
+        printf("msg_type: %d\r\n", msg.header.type);
+        printf("raw_length: %d\r\n", msg.header.raw_length);
+        printf("address: %d\r\n", msg.header.address);
+        printf("port: %d\r\n", msg.header.port);
+        printf("payload_type: %d\r\n", msg.header.payload_type);
+        for (auto i = 0; i < msg.payload_length(); ++i)
+            printf("%d, ", ((uint8_t*)(msg.payload))[i]);
+        printf("\r\n");
+
         printf("address of header: %d | ", &header);
         printf("address of msg.header: %d\r\n", &(msg.header));
         printf("address of checksum: %d | ", &checksum);
@@ -64,6 +71,18 @@ void HarpCore::handle_rx_buffer_message()
     else
     {
         msg_t msg{header, payload, checksum};
+
+        printf("I am a Pi pico with ID: %d. Data from this message (%d bytes) is: \r\n",
+               regs_.regs_.R_WHO_AM_I, msg.payload_length());
+        printf("msg_type: %d\r\n", msg.header.type);
+        printf("raw_length: %d\r\n", msg.header.raw_length);
+        printf("address: %d\r\n", msg.header.address);
+        printf("port: %d\r\n", msg.header.port);
+        printf("payload_type: %d\r\n", msg.header.payload_type);
+        for (auto i = 0; i < msg.payload_length(); ++i)
+            printf("%d, ", ((uint8_t*)(msg.payload))[i]);
+        printf("\r\n");
+
         printf("address of header: %d | ", &header);
         printf("address of msg.header: %d\r\n", &(msg.header));
         printf("address of checksum: %d | ", &checksum);
@@ -84,9 +103,11 @@ void HarpCore::handle_rx_buffer_message()
 void HarpCore::read_reg_generic(RegNames reg_name)
 {
     const RegSpecs& specs = regs_.enum_to_reg_specs[reg_name];
-    //push_reg_data_to_tx_buffer(reg_name, specs.base_ptr, specs.num_bytes);
-    // TODO: push data to tx buffer via DMA.
-    // Ensure DMA is not busy.
+    // Construct Harp Reply.
+    // Push data into usb packet and send it.
+    for (uint8_t i = 0; i < specs.num_bytes; ++i)
+        tud_cdc_write_char(*(specs.base_ptr + i));
+    tud_cdc_write_flush();
 }
 
 void HarpCore::write_to_read_only_reg_error(msg_t& msg)
@@ -98,24 +119,31 @@ void HarpCore::write_to_read_only_reg_error(msg_t& msg)
 
 void HarpCore::write_timestamp_second(msg_t& msg)
 {
-    SYST_CSRbits.TICKINT = 0; // Disable SYSTICK-generated interrupt.
-    regs_.regs_.R_TIMESTAMP_SECOND = *((uint32_t*)msg.payload);
-    SYST_CSRbits.TICKINT = 1; // Enable SYSTICK-generated interrupt.
+    const uint32_t& seconds = *((uint32_t*)msg.payload);
+    // PICO implementation: replace the current number of elapsed seconds
+    // without altering the number of elapsed microseconds.
+    uint64_t set_time_microseconds = uint64_t(seconds) * 1000000UL;
+    uint32_t current_microseconds = time_us_64() % 1000000ULL;
+    uint64_t new_time = set_time_microseconds + current_microseconds;
+    // Set the low and high time registers with the desired seconds.
+    // Update low register first.
+    timer_hw->timelw = (uint32_t)new_time;  // Truncate.
+    timer_hw->timehw = (uint32_t)(new_time >> 32);
+
 }
 
 void HarpCore::read_timestamp_microsecond(RegNames reg_name)
 {
-    // Pull microsecond data from SYSTICK; push into register.
-    // TODO: check math here..
-    regs_.regs_.R_TIMESTAMP_MICRO = uint16_t((999999 - SYST_CVR) >> 5);
+    // Update register. Then trigger a generic register read.
+    regs_.regs_.R_TIMESTAMP_MICRO = uint16_t(timer_hw->timelr >> 5);
     read_reg_generic(reg_name);
 }
 
 void HarpCore::write_timestamp_microsecond(msg_t& msg)
 {
-    // Update SYSTICK current value. (Remember that it counts DOWN.)
-    // TODO: check math.
-    SYST_CVRbits.CURRENT = 1e6 - ((uint32_t)(*((uint16_t*)msg.payload)) << 5);
+    const uint32_t& microseconds = ((uint32_t)(*((uint16_t*)msg.payload))) << 5;
+    // PICO implementation: replace the current number of elapsed microseconds.
+    timer_hw->timelw = (timer_hw->timelr & 0x001FFFFF) +  microseconds;
 }
 
 void HarpCore::write_operation_ctrl(msg_t& msg_t)
