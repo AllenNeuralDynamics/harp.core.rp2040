@@ -2,29 +2,49 @@
 
 HarpCore& HarpCore::init(uint16_t who_am_i, uint16_t hw_version,
                          uint8_t assembly_version, uint16_t harp_version,
-                         uint16_t fw_version)
+                         uint16_t fw_version, const char name[])
 {
     // Create the singleton instance using the private constructor.
     static HarpCore core_(who_am_i, hw_version, assembly_version, harp_version,
-                         fw_version);
+                         fw_version, name);
     return core_;
 }
 
 HarpCore::HarpCore(uint16_t who_am_i, uint16_t hw_version,
                      uint8_t assembly_version, uint16_t harp_version,
-                     uint16_t fw_version)
-:regs_{who_am_i, hw_version, assembly_version, harp_version, fw_version}
+                     uint16_t fw_version, const char name[])
+:regs_{who_am_i, hw_version, assembly_version, harp_version, fw_version, name},
+ rx_buffer_index_{0}
 {
 // TODO: Consider making the rest of this boilerplate setup virtual so it can
 //  be device-agnostic.
 
-
 // Configure USB-Serial
-// TODO: figure out if TinyUSB has a sendnow feature.
-// Setup DMA for moving data from registers to serial port TX.
 }
 
 HarpCore::~HarpCore(){}
+
+
+void HarpCore::handle_rx_buffer_input()
+{
+    // Fetch all data in the serial port. If it's at least a header's worth,
+    // start processing the message.
+    uint new_byte = getchar_timeout_us(0);
+    while (new_byte != PICO_ERROR_TIMEOUT)
+    {
+        rx_buffer_[rx_buffer_index_++] = uint8_t(new_byte);
+        new_byte = getchar_timeout_us(0);
+    }
+    // See if we have payload length's worth of data yet. Baily early if not.
+    uint8_t bytes_read = rx_buffer_index_ + 1;
+    if (bytes_read < sizeof(msg_header_t))
+        return;
+    msg_header_t& header = *((msg_header_t*)(&rx_buffer_));
+    if (bytes_read < header.raw_length + 2)
+        return;
+    // Process the fully-formed message.
+    handle_rx_buffer_message();
+}
 
 void HarpCore::handle_rx_buffer_message()
 {
@@ -33,7 +53,7 @@ void HarpCore::handle_rx_buffer_message()
     msg_header_t& header = *((msg_header_t*)(&rx_buffer_));
     void* payload = rx_buffer_ + header.payload_base_index_offset();
     uint8_t& checksum = *(rx_buffer_ + header.checksum_index_offset());
-    // TODO: handle error checking.
+    // TODO: check checksum.
 
     // Note: controller-to-device protocol interactions are such that we should
     //  never have this situation. Nevertheless, let's handle it and just
@@ -111,6 +131,7 @@ void HarpCore::read_reg_generic(RegNames reg_name)
     uint8_t checksum = 0;
     msg_header_t header{READ, raw_length, (RegNames)reg_name, 255,
                         (payload_type_t)(HAS_TIMESTAMP | specs.payload_type)};
+    // FIXME: arm devices are little-endian.
     // Push data into usb packet and send it.
     for (uint8_t i = 0; i < sizeof(header); ++i) // push the header.
     {
@@ -202,6 +223,9 @@ void HarpCore::write_reset_def(msg_t& msg_t)
 
 void HarpCore::write_device_name(msg_t& msg_t)
 {
+    // PICO implementation. Write to allocated flash memory
+    // since we have no eeprom.
+// https://github.com/raspberrypi/pico-examples/blob/master/flash/program/flash_program.c
 }
 
 void HarpCore::write_serial_number(msg_t& msg_t)

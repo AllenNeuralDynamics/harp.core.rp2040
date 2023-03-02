@@ -14,7 +14,7 @@ const uint16_t fw_version = 0;
 
 // Create Registers.
 HarpCore& core = HarpCore::init(who_am_i, hw_version, assembly_version,
-                                harp_version, fw_version);
+                                harp_version, fw_version, "Pico Harp");
 // Specific device implementations will inherit from HarpCore and get
 // instantiated similarly:
 //DeviceCore& harp_dev = DevCore::init(who_am_i, hw_version, assembly_version,
@@ -25,6 +25,7 @@ HarpCore& core = HarpCore::init(who_am_i, hw_version, assembly_version,
 //  * DONE dispatch messages to the appropriate callback function.
 //  * DONE Handle replying to read requests.
 //  * DONE time keeping/updating from Harp Message SECONDS and MICROSECONDS register writes.
+//  * DONE populating reg name field on initialization.
 //  * Handle time keeping/updating from clock synchronizer.
 // Extra: shouldn't need this since we should be able to handle requests one at a time.
 //  * queue incoming harp messages.
@@ -33,16 +34,14 @@ HarpCore& core = HarpCore::init(who_am_i, hw_version, assembly_version,
 // Core0 main.
 int main()
 {
-    //stdio_init_all();
     stdio_usb_init();
     //stdio_uart_init();
 
-    // Note: tud_cdc_connected checks DTR. tud_ready does not.
-    //while (!tud_ready()){} // Block until connection to serial port.
-    while (!stdio_usb_connected()){} // Block until connection to serial port.
+    while (!stdio_usb_connected()){} // Block until connected to serial port.
 
     while(true)
     {
+        core.handle_rx_buffer_input();  // entry point. Could be renamed run()
     /*
         core.regs.R_TIMESTAMP_SECOND = 10;
 
@@ -58,11 +57,15 @@ int main()
         core.handle_rx_buffer_message();
 */
         //core_.read_timestamp_microsecond();
+
+// Test write to usb packet directly and dispatch it.
+/*
         uint8_t buf[] = {'H', 'e', 'l', 'l', 'o', '\r', '\n'};
         for (auto i = 0; i < sizeof(buf); ++i)
             tud_cdc_write_char(buf[i]);
         tud_cdc_write_flush();
-        sleep_ms(3000);
+*/
+//        sleep_ms(3000);
     }
     return 0;
 }

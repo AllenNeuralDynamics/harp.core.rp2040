@@ -2,6 +2,7 @@
 #define REGISTERS_H
 #include <stdint.h>
 #include <harp_message.h>
+#include <cstring>  // for strcpy
 
 static const uint8_t REG_COUNT = 16;
 
@@ -29,7 +30,7 @@ enum RegNames : uint8_t  // FIXME: make RegName
     TIMESTAMP_OFFSET = 15
 };
 
-
+// TODO: should we byte-align these?
 struct RegValues
 {
     const uint16_t R_WHO_AM_I;
@@ -62,7 +63,7 @@ struct Registers
     public:
         Registers(uint16_t who_am_i, uint16_t hw_version,
                   uint8_t assembly_version, uint16_t harp_version,
-                  uint16_t fw_version);
+                  uint16_t fw_version, const char name[]);
         ~Registers();
 
     RegValues regs_;

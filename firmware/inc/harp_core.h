@@ -13,16 +13,17 @@
 
 /**
  * \brief Harp Core that handles management of common bank registers.
-*       Implemented as a singleton to simplify attaching interrupts (and since
-*       you can only have one per device.
+*       Implemented as a singleton to simplify attaching interrupt callbacks
+*       (and since you can only have one per device.
  */
+// FIXME: check ENDIANNESS.
 class HarpCore
 {
 // Make constructor private to prevent creating instances outside of init().
 private:
     HarpCore(uint16_t who_am_i, uint16_t hw_version,
              uint8_t assembly_version, uint16_t harp_version,
-             uint16_t fw_version);
+             uint16_t fw_version, const char name[]);
 
     ~HarpCore();
 
@@ -36,7 +37,7 @@ public:
  */
     static HarpCore& init(uint16_t who_am_i, uint16_t hw_version,
                           uint8_t assembly_version, uint16_t harp_version,
-                          uint16_t fw_version);
+                          uint16_t fw_version, const char name[]);
 
     static HarpCore& core_;
     static HarpCore& instance() {return core_;}
@@ -46,6 +47,12 @@ public:
     // https://isocpp.org/wiki/faq/pointers-to-members#array-memfnptrs
     typedef void (HarpCore::*RegReadMemberFn)(RegNames reg);
     typedef void (HarpCore::*RegWriteMemberFn)(msg_t& mst);
+
+/**
+ * \brief Read incoming bytes from the USB serial port. Calls
+ *      handle_rx_buffer_message. Does not block waiting for incoming chars.
+ */
+    void handle_rx_buffer_input();
 
 /**
  * \brief entry point for handling incoming harp messages. Dispatches message
@@ -72,6 +79,7 @@ public:
  * \brief data is read from serial port into the the rx_buffer.
  */
     uint8_t rx_buffer_[MAX_PACKET_SIZE];  // TODO: should be private.
+    uint8_t rx_buffer_index_;
 
 /**
  * \brief reference to the struct of reg values for easy access.
