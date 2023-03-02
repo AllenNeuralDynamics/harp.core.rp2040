@@ -46,7 +46,7 @@ void HarpCore::handle_rx_buffer_message()
                               payload, checksum};
 
         printf("I am a Pi pico with ID: %d. Data from this message (%d bytes) is: \r\n",
-               regs_.regs_.R_WHO_AM_I, msg.payload_length());
+               regs.R_WHO_AM_I, msg.payload_length());
         printf("msg_type: %d\r\n", msg.header.type);
         printf("raw_length: %d\r\n", msg.header.raw_length);
         printf("address: %d\r\n", msg.header.address);
@@ -76,7 +76,7 @@ void HarpCore::handle_rx_buffer_message()
         msg_t msg{header, payload, checksum};
 
         printf("I am a Pi pico with ID: %d. Data from this message (%d bytes) is: \r\n",
-               regs_.regs_.R_WHO_AM_I, msg.payload_length());
+               regs.R_WHO_AM_I, msg.payload_length());
         printf("msg_type: %d\r\n", msg.header.type);
         printf("raw_length: %d\r\n", msg.header.raw_length);
         printf("address: %d\r\n", msg.header.address);
@@ -106,15 +106,28 @@ void HarpCore::handle_rx_buffer_message()
 void HarpCore::read_reg_generic(RegNames reg_name)
 {
     const RegSpecs& specs = regs_.enum_to_reg_specs[reg_name];
-    // Construct Harp Reply that includes timestamp.
+    // Dispatch serialized Harp reply that includes timestamp.
     uint8_t raw_length = specs.num_bytes + 10;
     uint8_t checksum = 0;
     msg_header_t header{READ, raw_length, (RegNames)reg_name, 255,
-                        specs.payload_type};
+                        (payload_type_t)(HAS_TIMESTAMP | specs.payload_type)};
     // Push data into usb packet and send it.
-    for (uint8_t i = 0; i < sizeof(header); ++i)  // push the header.
+    for (uint8_t i = 0; i < sizeof(header); ++i) // push the header.
     {
         uint8_t& byte = *(((uint8_t*)(&header))+i);
+        checksum += byte;
+        tud_cdc_write_char(byte);
+    }
+    update_timestamp_regs(); // update and push timestamp in required order.
+    for (uint8_t i = 0; i < sizeof(regs.R_TIMESTAMP_SECOND); ++i)
+    {
+        uint8_t& byte = *(((uint8_t*)(&regs.R_TIMESTAMP_SECOND)) + i);
+        checksum += byte;
+        tud_cdc_write_char(byte);
+    }
+    for (uint8_t i = 0; i < sizeof(regs.R_TIMESTAMP_MICRO); ++i)
+    {
+        uint8_t& byte = *(((uint8_t*)(&regs.R_TIMESTAMP_MICRO)) + i);
         checksum += byte;
         tud_cdc_write_char(byte);
     }
@@ -124,7 +137,7 @@ void HarpCore::read_reg_generic(RegNames reg_name)
         checksum += byte;
         tud_cdc_write_char(byte);
     }
-    tud_cdc_write_char(checksum);
+    tud_cdc_write_char(checksum); // push the checksum.
     tud_cdc_write_flush();  // Send usb packet, even if not full.
 }
 
@@ -135,9 +148,17 @@ void HarpCore::write_to_read_only_reg_error(msg_t& msg)
 #endif
 }
 
+void HarpCore::update_timestamp_regs()
+{
+    // PICO implementation:
+    // Update microseconds first.
+    regs.R_TIMESTAMP_MICRO = uint16_t(timer_hw->timelr >> 5);
+    regs.R_TIMESTAMP_SECOND = time_us_64() / 1000000ULL;
+}
+
 void HarpCore::read_timestamp_second(RegNames reg_name)
 {
-    regs_.regs_.R_TIMESTAMP_SECOND = time_us_64() / 1000000ULL;
+    update_timestamp_regs();
     read_reg_generic(reg_name);
 }
 
@@ -154,13 +175,13 @@ void HarpCore::write_timestamp_second(msg_t& msg)
     timer_hw->timelw = (uint32_t)new_time;  // Truncate.
     timer_hw->timehw = (uint32_t)(new_time >> 32);
 
-    // issue a harp reply via a write_reg_generic?
+    // TODO: do we need to issue a harp reply via some sort of write_reg_generic?
 }
 
 void HarpCore::read_timestamp_microsecond(RegNames reg_name)
 {
     // Update register. Then trigger a generic register read.
-    regs_.regs_.R_TIMESTAMP_MICRO = uint16_t(timer_hw->timelr >> 5);
+    update_timestamp_regs();
     read_reg_generic(reg_name);
 }
 

@@ -1,9 +1,11 @@
 #ifndef HARP_MESSAGE_H
 #define HARP_MESSAGE_H
 
-#define IS_SIGNED (0x80)
-#define IS_FLOAT (0x40)
-#define HAS_TIMESTAMP (0x10)
+// Payload flags. These need their type enforced.
+#define IS_SIGNED ((uint8_t)0x80)
+#define IS_FLOAT ((uint8_t)0x40)
+#define HAS_TIMESTAMP ((uint8_t)0x10)
+
 #define MAX_PACKET_SIZE (255) // unused?
 
 enum msg_type_t: uint8_t

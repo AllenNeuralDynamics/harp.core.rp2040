@@ -80,6 +80,8 @@ public:
 
 private:
 
+    void update_timestamp_regs();  // call before reading timestamp register.
+
 /**
  * \brief read handler functions. One-per-harp-register where necessary,
  *      but the generic one can be used in most cases.

@@ -68,8 +68,9 @@ struct Registers
     RegValues regs_;
 //    RegValues& regs = regs_;
 
-    // Lookup table. Necessary because data is not of equal size.
-    // TODO: generate this with static table generation.
+    // Lookup table. Necessary because register data is not of equal size,
+    //  so we can't index into it directly by enum.
+    // TODO: consider generating this table statically with a template.
     const RegSpecs enum_to_reg_specs[REG_COUNT] =
     {{(uint8_t*)&regs_.R_WHO_AM_I,         sizeof(regs_.R_WHO_AM_I),          U16},
      {(uint8_t*)&regs_.R_HW_VERSION_H,     sizeof(regs_.R_HW_VERSION_H),      U8},
