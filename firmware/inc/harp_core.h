@@ -83,7 +83,9 @@ private:
 /**
  * \brief read handler functions. One-per-harp-register where necessary,
  *      but the generic one can be used in most cases.
+ *      Note: these all need to have the same function signature.
  */
+    void read_timestamp_second(RegNames reg_name);
     void read_timestamp_microsecond(RegNames reg_name);
     void read_reg_generic(RegNames reg_name); // catch-all.
 
@@ -118,7 +120,7 @@ private:
         &HarpCore::read_reg_generic,
         &HarpCore::read_reg_generic,
         &HarpCore::read_reg_generic,
-        &HarpCore::read_reg_generic,
+        &HarpCore::read_timestamp_second,
         &HarpCore::read_timestamp_microsecond,
         &HarpCore::read_reg_generic,
         &HarpCore::read_reg_generic,

@@ -35,6 +35,9 @@ void HarpCore::handle_rx_buffer_message()
     uint8_t& checksum = *(rx_buffer_ + header.checksum_index_offset());
     // TODO: handle error checking.
 
+    // Note: controller-to-device protocol interactions are such that we should
+    //  never have this situation. Nevertheless, let's handle it and just
+    //  ignore the timestamp information.
     if (header.has_timestamp())
     {
         uint32_t timestamp_sec = uint32_t(*(rx_buffer_ + 5));
@@ -61,7 +64,7 @@ void HarpCore::handle_rx_buffer_message()
         switch (msg.header.type)
         {
             case READ:
-                return read_from_reg(msg.header.address);
+                return read_from_reg((RegNames)msg.header.address);
             case WRITE:
                 return write_to_reg(msg);
             default:
@@ -91,7 +94,7 @@ void HarpCore::handle_rx_buffer_message()
         switch (msg.header.type)
         {
             case READ:
-                return read_from_reg(msg.header.address);
+                return read_from_reg((RegNames)msg.header.address);
             case WRITE:
                 return write_to_reg(msg);
             default:
@@ -103,11 +106,26 @@ void HarpCore::handle_rx_buffer_message()
 void HarpCore::read_reg_generic(RegNames reg_name)
 {
     const RegSpecs& specs = regs_.enum_to_reg_specs[reg_name];
-    // Construct Harp Reply.
+    // Construct Harp Reply that includes timestamp.
+    uint8_t raw_length = specs.num_bytes + 10;
+    uint8_t checksum = 0;
+    msg_header_t header{READ, raw_length, (RegNames)reg_name, 255,
+                        specs.payload_type};
     // Push data into usb packet and send it.
-    for (uint8_t i = 0; i < specs.num_bytes; ++i)
-        tud_cdc_write_char(*(specs.base_ptr + i));
-    tud_cdc_write_flush();
+    for (uint8_t i = 0; i < sizeof(header); ++i)  // push the header.
+    {
+        uint8_t& byte = *(((uint8_t*)(&header))+i);
+        checksum += byte;
+        tud_cdc_write_char(byte);
+    }
+    for (uint8_t i = 0; i < specs.num_bytes; ++i) // push the payload data.
+    {
+        const volatile uint8_t& byte = *(specs.base_ptr + i);
+        checksum += byte;
+        tud_cdc_write_char(byte);
+    }
+    tud_cdc_write_char(checksum);
+    tud_cdc_write_flush();  // Send usb packet, even if not full.
 }
 
 void HarpCore::write_to_read_only_reg_error(msg_t& msg)
@@ -115,6 +133,12 @@ void HarpCore::write_to_read_only_reg_error(msg_t& msg)
 #ifdef DEBUG
     printf("Error: Reg address %d is read-only.\r\n", &msg.address);
 #endif
+}
+
+void HarpCore::read_timestamp_second(RegNames reg_name)
+{
+    regs_.regs_.R_TIMESTAMP_SECOND = time_us_64() / 1000000ULL;
+    read_reg_generic(reg_name);
 }
 
 void HarpCore::write_timestamp_second(msg_t& msg)
@@ -130,6 +154,7 @@ void HarpCore::write_timestamp_second(msg_t& msg)
     timer_hw->timelw = (uint32_t)new_time;  // Truncate.
     timer_hw->timehw = (uint32_t)(new_time >> 32);
 
+    // issue a harp reply via a write_reg_generic?
 }
 
 void HarpCore::read_timestamp_microsecond(RegNames reg_name)

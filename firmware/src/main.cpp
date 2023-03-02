@@ -15,33 +15,20 @@ const uint16_t fw_version = 0;
 // Create Registers.
 HarpCore& core = HarpCore::init(who_am_i, hw_version, assembly_version,
                                 harp_version, fw_version);
+// Specific device implementations will inherit from HarpCore and get
+// instantiated similarly:
 //DeviceCore& harp_dev = DevCore::init(who_am_i, hw_version, assembly_version,
 //                                     harp_version, fw_version);
-// Under the hood, should init:
-//  * DMA UART to TX
-//  * SYSTICK to update at 1 [us] intervals.
-//  * SYSTICK IRQ to update TIMESTAMP_SECONDS.
-//  * synchronizer interrupt handler?
 
 // TODO:
 //  * DONE parse messages.
 //  * DONE dispatch messages to the appropriate callback function.
 //  * DONE Handle replying to read requests.
-//  * Handle basic timekeeping/updating from Harp Message.
-//  * Handle basic timekeeping/updating from clock synchronizer.
-
-// Overwrite weak reference to systick IRQ in crt0.s.
-//extern void isr_systick()
-//{
-//    tud_task();  // happens at 1[ms] intervals.
-//}
-
-//void cdc_write(uint8_t buf[], uint8_t num_bytes)
-//{
-//    for (uint8_t i = 0; i < num_bytes; ++i)
-//        tud_cdc_write_char(buf[i]);
-//    tud_cdc_write_flush();
-//}
+//  * DONE time keeping/updating from Harp Message SECONDS and MICROSECONDS register writes.
+//  * Handle time keeping/updating from clock synchronizer.
+// Extra: shouldn't need this since we should be able to handle requests one at a time.
+//  * queue incoming harp messages.
+//  * queue outgoing harp messages.
 
 // Core0 main.
 int main()

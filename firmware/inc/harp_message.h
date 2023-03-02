@@ -1,6 +1,5 @@
 #ifndef HARP_MESSAGE_H
 #define HARP_MESSAGE_H
-#include <registers.h>
 
 #define IS_SIGNED (0x80)
 #define IS_FLOAT (0x40)
@@ -11,7 +10,7 @@ enum msg_type_t: uint8_t
 {
     READ = 1,
     WRITE = 2,
-    EVEN = 3,
+    EVENT = 3,
     READ_ERROR = 9,
     WRITE_ERROR = 10
 };
@@ -46,7 +45,7 @@ struct msg_header_t
 {
     msg_type_t type;
     uint8_t raw_length;
-    RegNames address;  // uint8_t  // TODO: change to RegNames type.
+    uint8_t address;
     uint8_t port; // should default to 255.
     payload_type_t payload_type;
 
