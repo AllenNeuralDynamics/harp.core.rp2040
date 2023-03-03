@@ -7,10 +7,10 @@
 
 // Create device name array.
 const uint16_t who_am_i = 1216;
-const uint16_t hw_version = 0;
-const uint8_t assembly_version = 0;
-const uint16_t harp_version = 0;
-const uint16_t fw_version = 0;
+const uint16_t hw_version = 1;
+const uint8_t assembly_version = 2;
+const uint16_t harp_version = 3;
+const uint16_t fw_version = 4;
 
 // Create Registers.
 HarpCore& core = HarpCore::init(who_am_i, hw_version, assembly_version,
@@ -26,6 +26,8 @@ HarpCore& core = HarpCore::init(who_am_i, hw_version, assembly_version,
 //  * DONE Handle replying to read requests.
 //  * DONE time keeping/updating from Harp Message SECONDS and MICROSECONDS register writes.
 //  * DONE populating reg name field on initialization.
+//  * DONE parse harp messages
+//  * DONE send harp replies
 //  * Handle time keeping/updating from clock synchronizer.
 // Extra: shouldn't need this since we should be able to handle requests one at a time.
 //  * queue incoming harp messages.

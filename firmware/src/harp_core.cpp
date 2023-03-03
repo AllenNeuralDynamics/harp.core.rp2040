@@ -17,7 +17,7 @@ HarpCore::HarpCore(uint16_t who_am_i, uint16_t hw_version,
  rx_buffer_index_{0}
 {
 // TODO: Consider making the rest of this boilerplate setup virtual so it can
-//  be device-agnostic.
+//  be fully device-agnostic.
 
 // Configure USB-Serial
 }
@@ -28,7 +28,7 @@ HarpCore::~HarpCore(){}
 void HarpCore::handle_rx_buffer_input()
 {
     // Fetch all data in the serial port. If it's at least a header's worth,
-    // start processing the message.
+    // start processing the message. Dispatch msg if it has completely arrived.
     uint new_byte = getchar_timeout_us(0);
     while (new_byte != PICO_ERROR_TIMEOUT)
     {
@@ -42,6 +42,7 @@ void HarpCore::handle_rx_buffer_input()
     msg_header_t& header = *((msg_header_t*)(&rx_buffer_));
     if (bytes_read < header.raw_length + 2)
         return;
+    rx_buffer_index_ = 0; // Reset buffer index for next message.
     // Process the fully-formed message.
     handle_rx_buffer_message();
 }
@@ -49,7 +50,7 @@ void HarpCore::handle_rx_buffer_input()
 void HarpCore::handle_rx_buffer_message()
 {
     // Reinterpret contents of the uart rx buffer as a message and dispatch it.
-    // Use references and ptrs so that we don't actually copy anything.
+    // Use references and ptrs so that we don't make any copies.
     msg_header_t& header = *((msg_header_t*)(&rx_buffer_));
     void* payload = rx_buffer_ + header.payload_base_index_offset();
     uint8_t& checksum = *(rx_buffer_ + header.checksum_index_offset());
@@ -65,6 +66,7 @@ void HarpCore::handle_rx_buffer_message()
         timestamped_msg_t msg{header, timestamp_sec, timestamp_usec,
                               payload, checksum};
 
+/*
         printf("I am a Pi pico with ID: %d. Data from this message (%d bytes) is: \r\n",
                regs.R_WHO_AM_I, msg.payload_length());
         printf("msg_type: %d\r\n", msg.header.type);
@@ -80,6 +82,7 @@ void HarpCore::handle_rx_buffer_message()
         printf("address of msg.header: %d\r\n", &(msg.header));
         printf("address of checksum: %d | ", &checksum);
         printf("address of checksum: %d | ", &(msg.checksum));
+*/
         // Handle read-or-write behavior.
         switch (msg.header.type)
         {
@@ -94,7 +97,7 @@ void HarpCore::handle_rx_buffer_message()
     else
     {
         msg_t msg{header, payload, checksum};
-
+/*
         printf("I am a Pi pico with ID: %d. Data from this message (%d bytes) is: \r\n",
                regs.R_WHO_AM_I, msg.payload_length());
         printf("msg_type: %d\r\n", msg.header.type);
@@ -110,6 +113,7 @@ void HarpCore::handle_rx_buffer_message()
         printf("address of msg.header: %d\r\n", &(msg.header));
         printf("address of checksum: %d | ", &checksum);
         printf("address of checksum: %d | ", &(msg.checksum));
+*/
         // Handle read-or-write behavior.
         switch (msg.header.type)
         {
