@@ -21,9 +21,12 @@ class HarpCore
 {
 // Make constructor private to prevent creating instances outside of init().
 private:
-    HarpCore(uint16_t who_am_i, uint16_t hw_version,
-             uint8_t assembly_version, uint16_t harp_version,
-             uint16_t fw_version, const char name[]);
+    HarpCore(uint16_t who_am_i,
+             uint8_t hw_version_major, uint8_t hw_version_minor,
+             uint8_t assembly_version,
+             uint8_t harp_version_major, uint8_t harp_version_minor,
+             uint8_t fw_version_major, uint8_t fw_version_minor,
+             const char name[]);
 
     ~HarpCore();
 
@@ -35,9 +38,16 @@ public:
 /**
  * \brief initialize the harp core singleton with parameters.
  */
-    static HarpCore& init(uint16_t who_am_i, uint16_t hw_version,
-                          uint8_t assembly_version, uint16_t harp_version,
-                          uint16_t fw_version, const char name[]);
+    static HarpCore& init(uint16_t who_am_i,
+                          uint8_t hw_version_major, uint8_t hw_version_minor,
+                          uint8_t assembly_version,
+                          uint8_t harp_version_major, uint8_t harp_version_minor,
+                          uint8_t fw_version_major, uint8_t fw_version_minor,
+                          const char name[]);
+
+
+
+
 
     static HarpCore& core_;
     static HarpCore& instance() {return core_;}

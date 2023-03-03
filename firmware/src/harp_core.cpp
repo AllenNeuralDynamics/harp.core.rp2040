@@ -1,19 +1,29 @@
 #include <harp_core.h>
 
-HarpCore& HarpCore::init(uint16_t who_am_i, uint16_t hw_version,
-                         uint8_t assembly_version, uint16_t harp_version,
-                         uint16_t fw_version, const char name[])
+HarpCore& HarpCore::init(uint16_t who_am_i,
+                         uint8_t hw_version_major, uint8_t hw_version_minor,
+                         uint8_t assembly_version,
+                         uint8_t harp_version_major, uint8_t harp_version_minor,
+                         uint8_t fw_version_major, uint8_t fw_version_minor,
+                         const char name[])
 {
     // Create the singleton instance using the private constructor.
-    static HarpCore core_(who_am_i, hw_version, assembly_version, harp_version,
-                         fw_version, name);
+    static HarpCore core_(who_am_i, hw_version_major, hw_version_minor,
+                          assembly_version,
+                          harp_version_major, harp_version_minor,
+                          fw_version_major, fw_version_minor, name);
     return core_;
 }
 
-HarpCore::HarpCore(uint16_t who_am_i, uint16_t hw_version,
-                     uint8_t assembly_version, uint16_t harp_version,
-                     uint16_t fw_version, const char name[])
-:regs_{who_am_i, hw_version, assembly_version, harp_version, fw_version, name},
+HarpCore::HarpCore(uint16_t who_am_i,
+                         uint8_t hw_version_major, uint8_t hw_version_minor,
+                         uint8_t assembly_version,
+                         uint8_t harp_version_major, uint8_t harp_version_minor,
+                         uint8_t fw_version_major, uint8_t fw_version_minor,
+                         const char name[])
+:regs_{who_am_i, hw_version_major, hw_version_minor,assembly_version,
+       harp_version_major, harp_version_minor,
+       fw_version_major, fw_version_minor, name},
  rx_buffer_index_{0}
 {
 // TODO: Consider making the rest of this boilerplate setup virtual so it can

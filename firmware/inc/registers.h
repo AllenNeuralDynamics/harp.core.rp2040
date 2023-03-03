@@ -61,9 +61,12 @@ struct RegSpecs
 struct Registers
 {
     public:
-        Registers(uint16_t who_am_i, uint16_t hw_version,
-                  uint8_t assembly_version, uint16_t harp_version,
-                  uint16_t fw_version, const char name[]);
+        Registers(uint16_t who_am_i,
+                  uint8_t hw_version_major, uint8_t hw_version_minor,
+                  uint8_t assembly_version,
+                  uint8_t harp_version_major, uint8_t harp_version_minor,
+                  uint8_t fw_version_major, uint8_t fw_version_minor,
+                  const char name[]);
         ~Registers();
 
     RegValues regs_;

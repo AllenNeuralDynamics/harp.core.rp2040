@@ -7,14 +7,20 @@
 
 // Create device name array.
 const uint16_t who_am_i = 1216;
-const uint16_t hw_version = 1;
+const uint8_t hw_version_major = 1;
+const uint8_t hw_version_minor = 0;
 const uint8_t assembly_version = 2;
-const uint16_t harp_version = 3;
-const uint16_t fw_version = 4;
+const uint8_t harp_version_major = 2;
+const uint8_t harp_version_minor = 0;
+const uint8_t fw_version_major = 3;
+const uint8_t fw_version_minor = 0;
 
 // Create Registers.
-HarpCore& core = HarpCore::init(who_am_i, hw_version, assembly_version,
-                                harp_version, fw_version, "Pico Harp");
+HarpCore& core = HarpCore::init(who_am_i, hw_version_major, hw_version_minor,
+                                assembly_version,
+                                harp_version_major, harp_version_minor,
+                                fw_version_major, fw_version_minor,
+                                "Pico Harp");
 // Specific device implementations will inherit from HarpCore and get
 // instantiated similarly:
 //DeviceCore& harp_dev = DevCore::init(who_am_i, hw_version, assembly_version,
@@ -29,6 +35,8 @@ HarpCore& core = HarpCore::init(who_am_i, hw_version, assembly_version,
 //  * DONE parse harp messages
 //  * DONE send harp replies
 //  * Handle time keeping/updating from clock synchronizer.
+//  * Implement register flag settings.
+//      * DUMP
 // Extra: shouldn't need this since we should be able to handle requests one at a time.
 //  * queue incoming harp messages.
 //  * queue outgoing harp messages.
