@@ -1,10 +1,17 @@
 #ifndef REGISTERS_H
 #define REGISTERS_H
 #include <stdint.h>
-#include <harp_message.h>
+#include <reg_types.h>
 #include <cstring>  // for strcpy
 
 static const uint8_t REG_COUNT = 16;
+
+// R_OPERATION_CTRL bitfields.
+#define DUMP_OFFSET (3)
+#define MUTE_RPL_OFFSET (4)
+#define VISUAL_EN_OFFSET (5)
+#define OPLEDEN (6)
+#define ALIVE_EN (7)
 
 /**
  * \brief enum where the name is the name of the register and the
@@ -30,7 +37,8 @@ enum RegNames : uint8_t  // FIXME: make RegName
     TIMESTAMP_OFFSET = 15
 };
 
-// TODO: should we byte-align these?
+// Byte-align struct data so we can send it out serially byte-by-byte.
+#pragma pack(push, 1)
 struct RegValues
 {
     const uint16_t R_WHO_AM_I;
@@ -50,12 +58,13 @@ struct RegValues
     volatile uint8_t R_CLOCK_CONFIG;
     volatile uint8_t R_TIMESTAMP_OFFSET;
 };
+#pragma pack(pop)
 
 struct RegSpecs
 {
     const volatile uint8_t* base_ptr;
     const uint8_t num_bytes;
-    const payload_type_t payload_type;
+    const reg_type_t payload_type;
 };
 
 struct Registers

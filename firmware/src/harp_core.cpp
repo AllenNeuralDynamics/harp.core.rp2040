@@ -53,8 +53,9 @@ void HarpCore::handle_rx_buffer_input()
     if (bytes_read < header.raw_length + 2)
         return;
     rx_buffer_index_ = 0; // Reset buffer index for next message.
-    // Process the fully-formed message.
-    handle_rx_buffer_message();
+    // Process the fully-formed message if device is not muted.
+    if (not (regs.R_OPERATION_CTRL >> MUTE_RPL_OFFSET) & 0x01)
+        handle_rx_buffer_message();
 }
 
 void HarpCore::handle_rx_buffer_message()
@@ -137,15 +138,20 @@ void HarpCore::handle_rx_buffer_message()
     }
 }
 
-void HarpCore::read_reg_generic(RegNames reg_name)
+void HarpCore::send_harp_reply(msg_type_t reply_type, RegNames reg_name,
+                               const volatile uint8_t* data, uint8_t num_bytes,
+                               reg_type_t payload_type)
 {
-    const RegSpecs& specs = regs_.enum_to_reg_specs[reg_name];
+    // TODO: should we lockout global interrupts to prevent reg date from
+    //  changing underneath us?
+    // FIXME: we cannot send more than 64 bytes of data because of underlying
+    //  usb implementation.
     // Dispatch serialized Harp reply that includes timestamp.
-    uint8_t raw_length = specs.num_bytes + 10;
+    // Note: This fn implementation assumes little-endian architecture.
+    uint8_t raw_length = num_bytes + 10;
     uint8_t checksum = 0;
-    msg_header_t header{READ, raw_length, (RegNames)reg_name, 255,
-                        (payload_type_t)(HAS_TIMESTAMP | specs.payload_type)};
-    // FIXME: arm devices are little-endian.
+    msg_header_t header{reply_type, raw_length, reg_name, 255,
+                        (reg_type_t)(HAS_TIMESTAMP | payload_type)};
     // Push data into usb packet and send it.
     for (uint8_t i = 0; i < sizeof(header); ++i) // push the header.
     {
@@ -166,14 +172,22 @@ void HarpCore::read_reg_generic(RegNames reg_name)
         checksum += byte;
         tud_cdc_write_char(byte);
     }
-    for (uint8_t i = 0; i < specs.num_bytes; ++i) // push the payload data.
+    for (uint8_t i = 0; i < num_bytes; ++i) // push the payload data.
     {
-        const volatile uint8_t& byte = *(specs.base_ptr + i);
+        const volatile uint8_t& byte = *(data + i);
         checksum += byte;
         tud_cdc_write_char(byte);
     }
     tud_cdc_write_char(checksum); // push the checksum.
     tud_cdc_write_flush();  // Send usb packet, even if not full.
+
+}
+
+void HarpCore::read_reg_generic(RegNames reg_name)
+{
+    const RegSpecs& specs = regs_.enum_to_reg_specs[reg_name];
+    send_harp_reply(READ, reg_name, specs.base_ptr, specs.num_bytes,
+                    specs.payload_type);
 }
 
 void HarpCore::write_to_read_only_reg_error(msg_t& msg)
@@ -181,6 +195,7 @@ void HarpCore::write_to_read_only_reg_error(msg_t& msg)
 #ifdef DEBUG
     printf("Error: Reg address %d is read-only.\r\n", &msg.address);
 #endif
+//    send_harp_reply(ERROR);
 }
 
 void HarpCore::update_timestamp_regs()
@@ -227,30 +242,61 @@ void HarpCore::write_timestamp_microsecond(msg_t& msg)
     timer_hw->timelw = (timer_hw->timelr & 0x001FFFFF) +  microseconds;
 }
 
-void HarpCore::write_operation_ctrl(msg_t& msg_t)
+void HarpCore::write_operation_ctrl(msg_t& msg)
 {
+    uint8_t& write_byte = *((uint8_t*)msg.payload);
+    // Update register state. Note: DUMP bit always reads as zero.
+    regs.R_OPERATION_CTRL = write_byte & ~(DUMP_OFFSET);
+    // Tease out flags.
+    bool DUMP = bool((write_byte >> DUMP_OFFSET) & 0x01);
+    // Bail early if we are muted.
+    if (is_muted())
+        return;
+    // Send reply. If DUMP: reply is all registers serialized (little-endian).
+    const RegSpecs& specs = regs_.enum_to_reg_specs[msg.header.address];
+    const RegNames& reg_name = (RegNames)msg.header.address;
+    if (DUMP)
+        send_harp_reply(WRITE, reg_name, (uint8_t*)&regs, sizeof(regs), U8);
+    else
+        send_harp_reply(WRITE, reg_name, specs.base_ptr, specs.num_bytes,
+                        specs.payload_type);
 }
 
-void HarpCore::write_reset_def(msg_t& msg_t)
+void HarpCore::write_reset_def(msg_t& msg)
 {
+    // TODO.
+    if (is_muted())
+        return;
 }
 
-void HarpCore::write_device_name(msg_t& msg_t)
+void HarpCore::write_device_name(msg_t& msg)
 {
+    // TODO.
     // PICO implementation. Write to allocated flash memory
     // since we have no eeprom.
 // https://github.com/raspberrypi/pico-examples/blob/master/flash/program/flash_program.c
+    if (is_muted())
+        return;
 }
 
-void HarpCore::write_serial_number(msg_t& msg_t)
+void HarpCore::write_serial_number(msg_t& msg)
 {
+    // TODO.
+    if (is_muted())
+        return;
 }
 
-void HarpCore::write_clock_config(msg_t& msg_t)
+void HarpCore::write_clock_config(msg_t& msg)
 {
+    // TODO.
+    if (is_muted())
+        return;
 }
 
-void HarpCore::write_timestamp_offset(msg_t& msg_t)
+void HarpCore::write_timestamp_offset(msg_t& msg)
 {
+    // TODO.
+    if (is_muted())
+        return;
 }
 

@@ -1,10 +1,6 @@
 #ifndef HARP_MESSAGE_H
 #define HARP_MESSAGE_H
-
-// Payload flags. These need their type enforced.
-#define IS_SIGNED ((uint8_t)0x80)
-#define IS_FLOAT ((uint8_t)0x40)
-#define HAS_TIMESTAMP ((uint8_t)0x10)
+#include <reg_types.h>
 
 #define MAX_PACKET_SIZE (255) // unused?
 
@@ -17,28 +13,6 @@ enum msg_type_t: uint8_t
     WRITE_ERROR = 10
 };
 
-enum payload_type_t: uint8_t
-{
-    U8 = 1,
-    S8 = IS_SIGNED | U8,
-    U16 = 2,
-    S16 = IS_SIGNED | 2, // 130
-    U32 = 4,
-    S32 = IS_SIGNED | 4,
-    U64 = 8,
-    S64 = IS_SIGNED | 8,
-    Float = IS_FLOAT | 4,
-    Timestamp = HAS_TIMESTAMP,
-    TimestampedU8 = HAS_TIMESTAMP | U8,
-    TimestampedS8 = HAS_TIMESTAMP | S8,
-    TimestampedU16 = HAS_TIMESTAMP | U16,
-    TimestampedS16 = HAS_TIMESTAMP | S16,
-    TimestampedU32 = HAS_TIMESTAMP | U32,
-    TimestampedS32 = HAS_TIMESTAMP | S32,
-    TimestampedU64 = HAS_TIMESTAMP | U64,
-    TimestampedS64 = HAS_TIMESTAMP | S64,
-    TimestampedFloat = HAS_TIMESTAMP | Float
-};
 
 // Byte-align struct data so we can either:
 // memcopy it to struct or cast the rx buffer to struct
@@ -47,9 +21,9 @@ struct msg_header_t
 {
     msg_type_t type;
     uint8_t raw_length;
-    uint8_t address;
+    uint8_t address; // should be a RegName?
     uint8_t port; // should default to 255.
-    payload_type_t payload_type;
+    reg_type_t payload_type;
 
     bool has_timestamp() {return bool((payload_type & HAS_TIMESTAMP) >> 4);}
     uint8_t payload_length() {return has_timestamp()? raw_length - 10: raw_length - 4;}
