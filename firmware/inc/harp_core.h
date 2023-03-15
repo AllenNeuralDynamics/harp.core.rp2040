@@ -102,13 +102,10 @@ public:
  */
     RegValues& regs = regs_.regs_;
 
-
-private:
-
-    void update_timestamp_regs();  // call before reading timestamp register.
-
+protected:
 /**
- * \brief Send a Harp-compliant device Reply message.
+ * \brief Send a Harp-compliant timestamped reply message.
+ * \warning does not check if we are currently busy sending a harp reply.
  */
     void send_harp_reply(msg_type_t reply_type, RegNames reg_name,
                          const volatile uint8_t* data, uint8_t num_bytes,
@@ -116,8 +113,14 @@ private:
 
     bool is_muted()
     {return bool((regs.R_OPERATION_CTRL >> MUTE_RPL_OFFSET) & 0x01);}
+
     bool events_enabled()
-    {return bool((regs.R_OPERATION_CTRL & 0b11) == 1);}
+    {return (regs.R_OPERATION_CTRL & 0x03) == ACTIVE;}
+
+private:
+
+    void update_timestamp_regs();  // call before reading timestamp register.
+
 /**
  * \brief read handler functions. One-per-harp-register where necessary,
  *      but the generic one can be used in most cases.

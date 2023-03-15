@@ -47,6 +47,8 @@ void HarpCore::run()
 
 void HarpCore::handle_rx_buffer_input()
 {
+// TODO: consider tinyusb-only implementation using tud_cdc_n_available etc.
+// https://github.com/hathach/tinyusb/blob/master/src/class/cdc/cdc_device.h
     // Fetch all data in the serial port. If it's at least a header's worth,
     // start processing the message. Dispatch msg if it has completely arrived.
     uint new_byte = getchar_timeout_us(0);
@@ -55,10 +57,11 @@ void HarpCore::handle_rx_buffer_input()
         rx_buffer_[rx_buffer_index_++] = uint8_t(new_byte);
         new_byte = getchar_timeout_us(0);
     }
-    // See if we have payload length's worth of data yet. Baily early if not.
+    // See if we have a message header's worth of data yet. Baily early if not.
     uint8_t bytes_read = rx_buffer_index_ + 1;
     if (bytes_read < sizeof(msg_header_t))
         return;
+    // Reinterpret contents of the uart rx buffer as a message buffer.
     msg_header_t& header = *((msg_header_t*)(&rx_buffer_));
     if (bytes_read < header.raw_length + 2)
         return;
@@ -172,9 +175,9 @@ void HarpCore::send_harp_reply(msg_type_t reply_type, RegNames reg_name,
 {
     // TODO: should we lockout global interrupts to prevent reg date from
     //  changing underneath us?
-    // FIXME: we cannot send more than 64 bytes of data because of underlying
-    //  usb implementation.
-    // Dispatch serialized Harp reply that includes timestamp.
+    // FIXME: current implementation cannot send more than 64 bytes of data
+    //  because of underlying usb implementation.
+    // Dispatch timestamped Harp reply.
     // Note: This fn implementation assumes little-endian architecture.
     uint8_t raw_length = num_bytes + 10;
     uint8_t checksum = 0;

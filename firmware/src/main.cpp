@@ -24,26 +24,6 @@ HarpCore& core = HarpCore::init(who_am_i, hw_version_major, hw_version_minor,
                                 "Pico Harp");
 HarpSynchronizer& synchro = HarpSynchronizer::init(uart0, 1);
 
-// Specific device implementations will inherit from HarpCore and get
-// instantiated similarly:
-//DeviceCore& harp_dev = DevCore::init(who_am_i, hw_version, assembly_version,
-//                                     harp_version, fw_version);
-
-// TODO:
-//  * DONE parse messages.
-//  * DONE dispatch messages to the appropriate callback function.
-//  * DONE Handle replying to read requests.
-//  * DONE time keeping/updating from Harp Message SECONDS and MICROSECONDS register writes.
-//  * DONE populating reg name field on initialization.
-//  * DONE parse harp messages
-//  * DONE send harp replies
-//  * Handle time keeping/updating from clock synchronizer.
-//  * Implement register flag settings.
-//      * DUMP
-// Extra: shouldn't need this since we should be able to handle requests one at a time.
-//  * queue incoming harp messages.
-//  * queue outgoing harp messages.
-
 // Core0 main.
 int main()
 {

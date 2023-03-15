@@ -26,7 +26,6 @@ enum op_mode_t: uint8_t
     SPEED = 3
 };
 
-
 /**
  * \brief enum where the name is the name of the register and the
  *        value is the address according to the harp protocol spec.
