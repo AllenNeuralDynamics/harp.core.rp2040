@@ -22,7 +22,7 @@ HarpCore& core = HarpCore::init(who_am_i, hw_version_major, hw_version_minor,
                                 harp_version_major, harp_version_minor,
                                 fw_version_major, fw_version_minor,
                                 "Pico Harp");
-HarpSynchronizer& synchro = HarpSynchronizer::init(uart0, 1);
+HarpSynchronizer& sync = HarpSynchronizer::init(uart0, 1);
 
 // Core0 main.
 int main()

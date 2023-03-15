@@ -89,24 +89,6 @@ void HarpCore::handle_rx_buffer_message()
         uint16_t timestamp_usec = uint16_t(*(rx_buffer_ + 9));
         timestamped_msg_t msg{header, timestamp_sec, timestamp_usec,
                               payload, checksum};
-
-/*
-        printf("I am a Pi pico with ID: %d. Data from this message (%d bytes) is: \r\n",
-               regs.R_WHO_AM_I, msg.payload_length());
-        printf("msg_type: %d\r\n", msg.header.type);
-        printf("raw_length: %d\r\n", msg.header.raw_length);
-        printf("address: %d\r\n", msg.header.address);
-        printf("port: %d\r\n", msg.header.port);
-        printf("payload_type: %d\r\n", msg.header.payload_type);
-        for (auto i = 0; i < msg.payload_length(); ++i)
-            printf("%d, ", ((uint8_t*)(msg.payload))[i]);
-        printf("\r\n");
-
-        printf("address of header: %d | ", &header);
-        printf("address of msg.header: %d\r\n", &(msg.header));
-        printf("address of checksum: %d | ", &checksum);
-        printf("address of checksum: %d | ", &(msg.checksum));
-*/
         // Handle read-or-write behavior.
         switch (msg.header.type)
         {
@@ -232,8 +214,10 @@ void HarpCore::write_to_read_only_reg_error(msg_t& msg)
 void HarpCore::update_timestamp_regs()
 {
     // PICO implementation:
+    //  extract time data from pico timer which increments every 1[us].
+    // Note that R_TIMESTAMP_MICRO can only represent values up to 31249.
     // Update microseconds first.
-    regs.R_TIMESTAMP_MICRO = uint16_t(timer_hw->timelr >> 5);
+    regs.R_TIMESTAMP_MICRO = uint16_t(time_us_32() >> 5)%31250;
     regs.R_TIMESTAMP_SECOND = time_us_64() / 1000000ULL;
 }
 
@@ -270,7 +254,7 @@ void HarpCore::write_timestamp_microsecond(msg_t& msg)
 {
     const uint32_t& microseconds = ((uint32_t)(*((uint16_t*)msg.payload))) << 5;
     // PICO implementation: replace the current number of elapsed microseconds.
-    timer_hw->timelw = (timer_hw->timelr & 0x001FFFFF) +  microseconds;
+    timer_hw->timelw = (time_us_32() & ~0x001FFFFF) +  microseconds;
 }
 
 void HarpCore::write_operation_ctrl(msg_t& msg)
