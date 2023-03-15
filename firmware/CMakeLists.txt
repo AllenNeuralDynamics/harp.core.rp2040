@@ -25,6 +25,10 @@ add_library(harp_core
     src/harp_core.cpp
 )
 
+add_library(harp_sync
+    src/harp_synchronizer.cpp
+)
+
 # Where to look for header files.
 #target_include_directories(${PROJECT_NAME} PUBLIC inc)
 
@@ -40,8 +44,9 @@ include_directories(inc)
 # Link libraries to the targets that need them.
 #target_link_libraries(<target> <lib0> <lib1>)
 
+target_link_libraries(harp_sync pico_stdlib)
 target_link_libraries(harp_core registers pico_stdlib)
-target_link_libraries(${PROJECT_NAME} pico_stdlib harp_core)
+target_link_libraries(${PROJECT_NAME} pico_stdlib harp_core harp_sync)
 
 # create map/bin/hex/uf2 file in addition to ELF.
 pico_add_extra_outputs(${PROJECT_NAME})

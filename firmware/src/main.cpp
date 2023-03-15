@@ -1,4 +1,5 @@
 #include <harp_core.h>
+#include <harp_synchronizer.h>
 #include <harp_message.h>
 #include <pico/stdlib.h>
 #include <cstdio>
@@ -15,12 +16,14 @@ const uint8_t harp_version_minor = 0;
 const uint8_t fw_version_major = 3;
 const uint8_t fw_version_minor = 0;
 
-// Create Registers.
+// Create Core and synchronizer.
 HarpCore& core = HarpCore::init(who_am_i, hw_version_major, hw_version_minor,
                                 assembly_version,
                                 harp_version_major, harp_version_minor,
                                 fw_version_major, fw_version_minor,
                                 "Pico Harp");
+HarpSynchronizer& synchro = HarpSynchronizer::init(uart0, 1);
+
 // Specific device implementations will inherit from HarpCore and get
 // instantiated similarly:
 //DeviceCore& harp_dev = DevCore::init(who_am_i, hw_version, assembly_version,
@@ -51,7 +54,7 @@ int main()
 
     while(true)
     {
-        core.handle_rx_buffer_input();  // entry point. Could be renamed run()
+        core.run();
     /*
         core.regs.R_TIMESTAMP_SECOND = 10;
 

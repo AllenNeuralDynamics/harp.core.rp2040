@@ -8,32 +8,42 @@ HarpCore& HarpCore::init(uint16_t who_am_i,
                          const char name[])
 {
     // Create the singleton instance using the private constructor.
-    static HarpCore core_(who_am_i, hw_version_major, hw_version_minor,
+    static HarpCore core(who_am_i, hw_version_major, hw_version_minor,
                           assembly_version,
                           harp_version_major, harp_version_minor,
                           fw_version_major, fw_version_minor, name);
-    return core_;
+    return core;
 }
 
 HarpCore::HarpCore(uint16_t who_am_i,
-                         uint8_t hw_version_major, uint8_t hw_version_minor,
-                         uint8_t assembly_version,
-                         uint8_t harp_version_major, uint8_t harp_version_minor,
-                         uint8_t fw_version_major, uint8_t fw_version_minor,
-                         const char name[])
+                   uint8_t hw_version_major, uint8_t hw_version_minor,
+                   uint8_t assembly_version,
+                   uint8_t harp_version_major, uint8_t harp_version_minor,
+                   uint8_t fw_version_major, uint8_t fw_version_minor,
+                   const char name[])
 :regs_{who_am_i, hw_version_major, hw_version_minor,assembly_version,
        harp_version_major, harp_version_minor,
        fw_version_major, fw_version_minor, name},
  rx_buffer_index_{0}
 {
-// TODO: Consider making the rest of this boilerplate setup virtual so it can
+    // Create a pointer to the first (and one-and-only) instance created.
+    if (self == nullptr)
+        self = this;
+// TODO: Consider making this boilerplate setup virtual so it can
 //  be fully device-agnostic.
 
 // Configure USB-Serial
 }
 
-HarpCore::~HarpCore(){}
+HarpCore::~HarpCore(){self = nullptr;}
 
+void HarpCore::run()
+{
+    // Note: updating harp clock is handled via interrupt.
+    handle_rx_buffer_input(); // Execute msg behavior. Dispatch harp replies.
+    update_register_state_outputs(); // Handle behavior related to register state.
+    // handle_tasks();
+}
 
 void HarpCore::handle_rx_buffer_input()
 {
@@ -135,6 +145,24 @@ void HarpCore::handle_rx_buffer_message()
             default:
                 break;
         }
+    }
+}
+
+void HarpCore::update_register_state_outputs()
+{
+    //switch (regs.R_OPERATION_CTRL & 0x03) // op mode
+    switch (regs_.r_operation_ctrl_bits.OP_MODE)
+    {
+        case STANDBY:
+            break;
+        case ACTIVE:
+            break;
+        case RESERVED:
+            break;
+        case SPEED:
+            break;
+        default:
+            return;
     }
 }
 

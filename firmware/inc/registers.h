@@ -2,6 +2,7 @@
 #define REGISTERS_H
 #include <stdint.h>
 #include <reg_types.h>
+#include <core_reg_bits.h>
 #include <cstring>  // for strcpy
 
 static const uint8_t REG_COUNT = 16;
@@ -12,6 +13,19 @@ static const uint8_t REG_COUNT = 16;
 #define VISUAL_EN_OFFSET (5)
 #define OPLEDEN (6)
 #define ALIVE_EN (7)
+
+/**
+ * \brief enum for easier interpretation of the OP_MODE bitfield in the
+ *  R_OPERATION_CTRL register.
+ */
+enum op_mode_t: uint8_t
+{
+    STANDBY = 0,
+    ACTIVE = 1,
+    RESERVED = 2,
+    SPEED = 3
+};
+
 
 /**
  * \brief enum where the name is the name of the register and the
@@ -36,6 +50,7 @@ enum RegNames : uint8_t  // FIXME: make RegName
     CLOCK_CONFIG = 14,
     TIMESTAMP_OFFSET = 15
 };
+
 
 // Byte-align struct data so we can send it out serially byte-by-byte.
 #pragma pack(push, 1)
@@ -101,6 +116,11 @@ struct Registers
      {(uint8_t*)&regs_.R_SERIAL_NUMBER,    sizeof(regs_.R_SERIAL_NUMBER),     U16},
      {(uint8_t*)&regs_.R_CLOCK_CONFIG,     sizeof(regs_.R_CLOCK_CONFIG),      U8},
      {(uint8_t*)&regs_.R_TIMESTAMP_OFFSET, sizeof(regs_.R_TIMESTAMP_OFFSET),  U8}};
+
+    // Syntactic Sugar. Make bitfields for certain registers easier to access.
+    OperationCtrlBits& r_operation_ctrl_bits = *((OperationCtrlBits*)(&regs_.R_OPERATION_CTRL));
+    ResetDefBits& r_reset_def_bits = *((ResetDefBits*)(&regs_.R_RESET_DEF));
+    ClockConfigBits& r_clock_config_bits = *((ClockConfigBits*)(&regs_.R_CLOCK_CONFIG));
 };
 
 #endif //REGISTERS_H

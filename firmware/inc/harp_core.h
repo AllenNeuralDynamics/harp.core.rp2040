@@ -16,7 +16,6 @@
 *       Implemented as a singleton to simplify attaching interrupt callbacks
 *       (and since you can only have one per device.
  */
-// FIXME: check ENDIANNESS.
 class HarpCore
 {
 // Make constructor private to prevent creating instances outside of init().
@@ -45,18 +44,20 @@ public:
                           uint8_t fw_version_major, uint8_t fw_version_minor,
                           const char name[]);
 
-
-
-
-
-    static HarpCore& core_;
-    static HarpCore& instance() {return core_;}
+    static inline HarpCore* self = nullptr;
+    static HarpCore& instance() {return *self;}
 
     // Create a typedef so we can create an array of member function ptrs.
     // MsgHandleMemberFn points to a harp core member fn that takes (msg_t&)
     // https://isocpp.org/wiki/faq/pointers-to-members#array-memfnptrs
     typedef void (HarpCore::*RegReadMemberFn)(RegNames reg);
     typedef void (HarpCore::*RegWriteMemberFn)(msg_t& mst);
+
+/**
+ * \brief Periodically handle tasks based on the current time, state,
+ *      and inputs. Should be called in a loop.
+ */
+    void run();
 
 /**
  * \brief Read incoming bytes from the USB serial port. Calls
@@ -69,6 +70,11 @@ public:
  *      to the appropriate handler.
  */
     void handle_rx_buffer_message();
+
+/**
+ * \brief update state machine handling register logic.
+ */
+    void update_register_state_outputs();
 
 /**
  * \brief Write message contents to a register by dispatching message
@@ -110,6 +116,8 @@ private:
 
     bool is_muted()
     {return bool((regs.R_OPERATION_CTRL >> MUTE_RPL_OFFSET) & 0x01);}
+    bool events_enabled()
+    {return bool((regs.R_OPERATION_CTRL & 0b11) == 1);}
 /**
  * \brief read handler functions. One-per-harp-register where necessary,
  *      but the generic one can be used in most cases.
