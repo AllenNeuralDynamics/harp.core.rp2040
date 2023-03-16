@@ -5,7 +5,7 @@
 #include <core_reg_bits.h>
 #include <cstring>  // for strcpy
 
-static const uint8_t REG_COUNT = 16;
+static const uint8_t CORE_REG_COUNT = 16;
 
 // R_OPERATION_CTRL bitfields.
 #define DUMP_OFFSET (3)
@@ -30,7 +30,7 @@ enum op_mode_t: uint8_t
  * \brief enum where the name is the name of the register and the
  *        value is the address according to the harp protocol spec.
  */
-enum RegNames : uint8_t  // FIXME: make RegName
+enum RegName : uint8_t
 {
     WHO_AM_I = 0,
     HW_VERSION_H = 1, // major hardware version
@@ -98,7 +98,7 @@ struct Registers
     // Lookup table. Necessary because register data is not of equal size,
     //  so we can't index into it directly by enum.
     // TODO: consider generating this table statically with a template.
-    const RegSpecs enum_to_reg_specs[REG_COUNT] =
+    const RegSpecs enum_to_reg_specs[CORE_REG_COUNT] =
     {{(uint8_t*)&regs_.R_WHO_AM_I,         sizeof(regs_.R_WHO_AM_I),          U16},
      {(uint8_t*)&regs_.R_HW_VERSION_H,     sizeof(regs_.R_HW_VERSION_H),      U8},
      {(uint8_t*)&regs_.R_HW_VERSION_L,     sizeof(regs_.R_HW_VERSION_L),      U8},

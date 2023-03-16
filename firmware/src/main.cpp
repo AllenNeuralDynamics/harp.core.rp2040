@@ -44,7 +44,7 @@ int main()
         // Callback trigger by handling a fake message.
         printf("WHO_AM_I (callback):");
         uint8_t payload[] = {1, 2, 3};
-        uint8_t rx_buffer_data[] = {msg_type_t::READ, 7, RegNames::WHO_AM_I, 255,
+        uint8_t rx_buffer_data[] = {msg_type_t::READ, 7, RegName::WHO_AM_I, 255,
                                     reg_type_t::U8, payload[0], payload[1], payload[2], 0};
         memcpy(core.rx_buffer_, rx_buffer_data, 9);
         core.handle_rx_buffer_message();

@@ -50,7 +50,7 @@ public:
     // Create a typedef so we can create an array of member function ptrs.
     // MsgHandleMemberFn points to a harp core member fn that takes (msg_t&)
     // https://isocpp.org/wiki/faq/pointers-to-members#array-memfnptrs
-    typedef void (HarpCore::*RegReadMemberFn)(RegNames reg);
+    typedef void (HarpCore::*RegReadMemberFn)(RegName reg);
     typedef void (HarpCore::*RegWriteMemberFn)(msg_t& mst);
 
 /**
@@ -87,7 +87,7 @@ public:
  * \brief Write register contents to the tx buffer by dispatching message
  *      to the appropriate handler. inline.
  */
-    void read_from_reg(RegNames reg)
+    void read_from_reg(RegName reg)
     {std::invoke(reg_read_fns_[reg], this, reg);}
 
 
@@ -107,7 +107,7 @@ protected:
  * \brief Send a Harp-compliant timestamped reply message.
  * \warning does not check if we are currently busy sending a harp reply.
  */
-    void send_harp_reply(msg_type_t reply_type, RegNames reg_name,
+    void send_harp_reply(msg_type_t reply_type, RegName reg_name,
                          const volatile uint8_t* data, uint8_t num_bytes,
                          reg_type_t payload_type);
 
@@ -126,9 +126,9 @@ private:
  *      but the generic one can be used in most cases.
  *      Note: these all need to have the same function signature.
  */
-    void read_timestamp_second(RegNames reg_name);
-    void read_timestamp_microsecond(RegNames reg_name);
-    void read_reg_generic(RegNames reg_name); // catch-all.
+    void read_timestamp_second(RegName reg_name);
+    void read_timestamp_microsecond(RegName reg_name);
+    void read_reg_generic(RegName reg_name); // catch-all.
 
 /**
  * \brief a write handler function per harp register. Handles write
@@ -151,7 +151,7 @@ private:
     Registers regs_;
 
     // Function Tables. Order matters since we will index into it with enums.
-    RegReadMemberFn reg_read_fns_[REG_COUNT] =
+    RegReadMemberFn reg_read_fns_[CORE_REG_COUNT] =
     {
         &HarpCore::read_reg_generic,
         &HarpCore::read_reg_generic,
@@ -171,7 +171,7 @@ private:
         &HarpCore::read_reg_generic,
     };
 
-    RegWriteMemberFn reg_write_fns_[REG_COUNT] =
+    RegWriteMemberFn reg_write_fns_[CORE_REG_COUNT] =
     {&HarpCore::write_to_read_only_reg_error,
      &HarpCore::write_to_read_only_reg_error,
      &HarpCore::write_to_read_only_reg_error,

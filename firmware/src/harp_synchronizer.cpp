@@ -60,7 +60,7 @@ void HarpSynchronizer::uart_rx_callback()
             {
                 // Interpret 4-byte sequence from index 2 onwards as a
                 // little-endian uint32_t.
-                uint64_t curr_us = uint64_t((uint32_t*)(&self->sync_data_[2])) * 1000000 - 572;
+                uint64_t curr_us = uint64_t(*((uint32_t*)(&self->sync_data_[2]))) * 1000000 - 572;
                 timer_hw->timelw = (uint32_t)curr_us;
                 timer_hw->timehw = (uint32_t)(curr_us >> 32);
             }

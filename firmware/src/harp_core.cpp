@@ -93,7 +93,7 @@ void HarpCore::handle_rx_buffer_message()
         switch (msg.header.type)
         {
             case READ:
-                return read_from_reg((RegNames)msg.header.address);
+                return read_from_reg((RegName)msg.header.address);
             case WRITE:
                 return write_to_reg(msg);
             default:
@@ -124,7 +124,7 @@ void HarpCore::handle_rx_buffer_message()
         switch (msg.header.type)
         {
             case READ:
-                return read_from_reg((RegNames)msg.header.address);
+                return read_from_reg((RegName)msg.header.address);
             case WRITE:
                 return write_to_reg(msg);
             default:
@@ -151,7 +151,7 @@ void HarpCore::update_register_state_outputs()
     }
 }
 
-void HarpCore::send_harp_reply(msg_type_t reply_type, RegNames reg_name,
+void HarpCore::send_harp_reply(msg_type_t reply_type, RegName reg_name,
                                const volatile uint8_t* data, uint8_t num_bytes,
                                reg_type_t payload_type)
 {
@@ -196,7 +196,7 @@ void HarpCore::send_harp_reply(msg_type_t reply_type, RegNames reg_name,
 
 }
 
-void HarpCore::read_reg_generic(RegNames reg_name)
+void HarpCore::read_reg_generic(RegName reg_name)
 {
     const RegSpecs& specs = regs_.enum_to_reg_specs[reg_name];
     send_harp_reply(READ, reg_name, specs.base_ptr, specs.num_bytes,
@@ -221,7 +221,7 @@ void HarpCore::update_timestamp_regs()
     regs.R_TIMESTAMP_SECOND = time_us_64() / 1000000ULL;
 }
 
-void HarpCore::read_timestamp_second(RegNames reg_name)
+void HarpCore::read_timestamp_second(RegName reg_name)
 {
     update_timestamp_regs();
     read_reg_generic(reg_name);
@@ -243,7 +243,7 @@ void HarpCore::write_timestamp_second(msg_t& msg)
     // TODO: do we need to issue a harp reply via some sort of write_reg_generic?
 }
 
-void HarpCore::read_timestamp_microsecond(RegNames reg_name)
+void HarpCore::read_timestamp_microsecond(RegName reg_name)
 {
     // Update register. Then trigger a generic register read.
     update_timestamp_regs();
@@ -269,7 +269,7 @@ void HarpCore::write_operation_ctrl(msg_t& msg)
         return;
     // Send reply. If DUMP: reply is all registers serialized (little-endian).
     const RegSpecs& specs = regs_.enum_to_reg_specs[msg.header.address];
-    const RegNames& reg_name = (RegNames)msg.header.address;
+    const RegName& reg_name = (RegName)msg.header.address;
     if (DUMP)
         send_harp_reply(WRITE, reg_name, (uint8_t*)&regs, sizeof(regs), U8);
     else
