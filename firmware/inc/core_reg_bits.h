@@ -1,6 +1,6 @@
 #ifndef CORE_REG_BITS_H
 #define CORE_REG_BITS_H
-#include <registers.h>
+#include <core_registers.h>
 
 
 struct OperationCtrlBits

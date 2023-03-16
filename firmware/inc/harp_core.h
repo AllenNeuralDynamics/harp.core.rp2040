@@ -2,7 +2,7 @@
 #define HARP_CORE_H
 #include <stdint.h>
 #include <harp_message.h>
-#include <registers.h>
+#include <core_registers.h>
 #include <arm_regs.h>
 #include <functional>  // for std::invoke
 
