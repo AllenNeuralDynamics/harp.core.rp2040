@@ -31,34 +31,9 @@ int main()
     //stdio_uart_init();
 
     while (!stdio_usb_connected()){} // Block until connected to serial port.
-
     while(true)
     {
         core.run();
-    /*
-        core.regs.R_TIMESTAMP_SECOND = 10;
-
-        // Struct access.
-        printf("WHO_AM_I (struct): %d\r\n", core.regs.R_TIMESTAMP_SECOND);
-
-        // Callback trigger by handling a fake message.
-        printf("WHO_AM_I (callback):");
-        uint8_t payload[] = {1, 2, 3};
-        uint8_t rx_buffer_data[] = {msg_type_t::READ, 7, RegName::WHO_AM_I, 255,
-                                    reg_type_t::U8, payload[0], payload[1], payload[2], 0};
-        memcpy(core.rx_buffer_, rx_buffer_data, 9);
-        core.handle_rx_buffer_message();
-*/
-        //core_.read_timestamp_microsecond();
-
-// Test write to usb packet directly and dispatch it.
-/*
-        uint8_t buf[] = {'H', 'e', 'l', 'l', 'o', '\r', '\n'};
-        for (auto i = 0; i < sizeof(buf); ++i)
-            tud_cdc_write_char(buf[i]);
-        tud_cdc_write_flush();
-*/
-//        sleep_ms(3000);
     }
     return 0;
 }
