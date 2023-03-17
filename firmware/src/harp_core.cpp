@@ -155,9 +155,7 @@ void HarpCore::send_harp_reply(msg_type_t reply_type, RegName reg_name,
                                const volatile uint8_t* data, uint8_t num_bytes,
                                reg_type_t payload_type)
 {
-    // TODO: should we lockout global interrupts to prevent reg date from
-    //  changing underneath us?
-    // FIXME: current implementation cannot send more than 64 bytes of data
+    // FIXME: implementation as-is cannot send more than 64 bytes of data
     //  because of underlying usb implementation.
     // Dispatch timestamped Harp reply.
     // Note: This fn implementation assumes little-endian architecture.
@@ -185,6 +183,8 @@ void HarpCore::send_harp_reply(msg_type_t reply_type, RegName reg_name,
         checksum += byte;
         tud_cdc_write_char(byte);
     }
+    // TODO: should we lockout global interrupts to prevent reg data from
+    //  changing underneath us?
     for (uint8_t i = 0; i < num_bytes; ++i) // push the payload data.
     {
         const volatile uint8_t& byte = *(data + i);
@@ -217,7 +217,8 @@ void HarpCore::update_timestamp_regs()
     //  extract time data from pico timer which increments every 1[us].
     // Note that R_TIMESTAMP_MICRO can only represent values up to 31249.
     // Update microseconds first.
-    regs.R_TIMESTAMP_MICRO = uint16_t(time_us_32() >> 5)%31250;
+    //regs.R_TIMESTAMP_MICRO = uint16_t(time_us_32() >> 5)%31250;
+    regs.R_TIMESTAMP_MICRO = uint16_t((time_us_32()%1000000U)>>5);
     regs.R_TIMESTAMP_SECOND = time_us_64() / 1000000ULL;
 }
 

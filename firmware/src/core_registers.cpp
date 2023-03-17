@@ -1,4 +1,4 @@
-#include <registers.h>
+#include <core_registers.h>
 
 Registers::Registers(uint16_t who_am_i,
                      uint8_t hw_version_major, uint8_t hw_version_minor,

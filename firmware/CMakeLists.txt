@@ -17,8 +17,8 @@ add_executable(${PROJECT_NAME}
     src/main.cpp
 )
 
-add_library(registers
-    src/registers.cpp
+add_library(core_registers
+    src/core_registers.cpp
 )
 
 add_library(harp_core
@@ -45,7 +45,7 @@ include_directories(inc)
 #target_link_libraries(<target> <lib0> <lib1>)
 
 target_link_libraries(harp_sync pico_stdlib)
-target_link_libraries(harp_core registers pico_stdlib)
+target_link_libraries(harp_core core_registers pico_stdlib)
 target_link_libraries(${PROJECT_NAME} pico_stdlib harp_core harp_sync)
 
 # create map/bin/hex/uf2 file in addition to ELF.
