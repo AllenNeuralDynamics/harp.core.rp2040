@@ -39,18 +39,19 @@ HarpCore::~HarpCore(){self = nullptr;}
 
 void HarpCore::run()
 {
-    // Note: updating harp clock is handled via interrupt.
-    handle_rx_buffer_input(); // Execute msg behavior. Dispatch harp replies.
-    update_register_state_outputs(); // Handle behavior related to register state.
-    // handle_tasks();
+    update_register_state();
+    bool new_msg = process_cdc_input();
+    if (new_msg)
+        handle_buffered_core_message();
 }
 
-void HarpCore::handle_rx_buffer_input()
+bool HarpCore::process_cdc_input()
 {
-// TODO: consider tinyusb-only implementation using tud_cdc_n_available etc.
-// https://github.com/hathach/tinyusb/blob/master/src/class/cdc/cdc_device.h
+    // TODO: Consider a timeout if we never receive a fully formed message.
+    // TODO: if the header has arrived, only read up to the payload, or
+    //  we may start reading into the next message if we are reading too slow.
     // Fetch all data in the serial port. If it's at least a header's worth,
-    // start processing the message. Dispatch msg if it has completely arrived.
+    // check the payload size and keep reading.
     uint new_byte = getchar_timeout_us(0);
     while (new_byte != PICO_ERROR_TIMEOUT)
     {
@@ -60,18 +61,17 @@ void HarpCore::handle_rx_buffer_input()
     // See if we have a message header's worth of data yet. Baily early if not.
     uint8_t bytes_read = rx_buffer_index_ + 1;
     if (bytes_read < sizeof(msg_header_t))
-        return;
+        return false;
     // Reinterpret contents of the uart rx buffer as a message buffer.
     msg_header_t& header = *((msg_header_t*)(&rx_buffer_));
+    // Bail early if the message payload has not fully arrived.
     if (bytes_read < header.raw_length + 2)
-        return;
+        return false;
     rx_buffer_index_ = 0; // Reset buffer index for next message.
-    // Process the fully-formed message if device is not muted.
-    if (not (regs.R_OPERATION_CTRL >> MUTE_RPL_OFFSET) & 0x01)
-        handle_rx_buffer_message();
+    return true;
 }
 
-void HarpCore::handle_rx_buffer_message()
+void HarpCore::handle_buffered_core_message()
 {
     // Reinterpret contents of the uart rx buffer as a message and dispatch it.
     // Use references and ptrs so that we don't make any copies.
@@ -133,7 +133,7 @@ void HarpCore::handle_rx_buffer_message()
     }
 }
 
-void HarpCore::update_register_state_outputs()
+void HarpCore::update_register_state()
 {
     //switch (regs.R_OPERATION_CTRL & 0x03) // op mode
     switch (regs_.r_operation_ctrl_bits.OP_MODE)

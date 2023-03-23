@@ -60,32 +60,41 @@ public:
     void run();
 
 /**
- * \brief Read incoming bytes from the USB serial port. Calls
- *      handle_rx_buffer_message. Does not block waiting for incoming chars.
+ * \brief Read incoming bytes from the USB serial port. Returns true
+ *      if a new message has been received. Does not block.
+ *  \note If called again after returning true, the buffered message may be
+ *      be overwritten.
  */
-    void handle_rx_buffer_input();
+    bool process_cdc_input();
 
 /**
- * \brief entry point for handling incoming harp messages. Dispatches message
- *      to the appropriate handler.
+ * \brief return a reference to the buffered message. Inline.
+ * \note this should only be called if process_cdc_input returns true.
  */
-    void handle_rx_buffer_message();
+    msg_t& get_buffered_message()
+    {return *((msg_t*)(&rx_buffer_));}
+
+/**
+ * \brief entry point for handling incoming harp messages to core registers.
+ *      Dispatches message to the appropriate handler.
+ */
+    void handle_buffered_core_message();
 
 /**
  * \brief update state machine handling register logic.
  */
-    void update_register_state_outputs();
+    void update_register_state();
 
 /**
  * \brief Write message contents to a register by dispatching message
- *      to the appropriate handler. inline.
+ *      to the appropriate handler. Inline.
  */
     void write_to_reg(msg_t& msg)
     {std::invoke(reg_write_fns_[msg.header.address], this, msg);}
 
 /**
  * \brief Write register contents to the tx buffer by dispatching message
- *      to the appropriate handler. inline.
+ *      to the appropriate handler. Inline.
  */
     void read_from_reg(RegName reg)
     {std::invoke(reg_read_fns_[reg], this, reg);}
@@ -111,6 +120,9 @@ protected:
                          const volatile uint8_t* data, uint8_t num_bytes,
                          reg_type_t payload_type);
 
+/**
+ * \brief true if the mute flag has been set in the R_OPERATION_CTRL register.
+ */
     bool is_muted()
     {return bool((regs.R_OPERATION_CTRL >> MUTE_RPL_OFFSET) & 0x01);}
 
