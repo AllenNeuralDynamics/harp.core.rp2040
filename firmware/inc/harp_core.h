@@ -68,11 +68,12 @@ public:
     bool process_cdc_input();
 
 /**
- * \brief return a reference to the buffered message. Inline.
- * \note this should only be called if process_cdc_input returns true.
+ * \brief return a reference to the message header in the rx_buffer. Inline.
+ * \note this should only be accessed if process_cdc_input returns true or
+ *      total_bytes_read_ >= sizeof(msg_header_t).
  */
-    msg_t& get_buffered_message()
-    {return *((msg_t*)(&rx_buffer_));}
+    msg_header_t& get_buffered_msg_header()
+    {return *((msg_header_t*)(&rx_buffer_));}
 
 /**
  * \brief entry point for handling incoming harp messages to core registers.
@@ -81,9 +82,9 @@ public:
     void handle_buffered_core_message();
 
 /**
- * \brief update state machine handling register logic.
+ * \brief update internal state machine.
  */
-    void update_register_state();
+    void update_state();
 
 /**
  * \brief Write message contents to a register by dispatching message
@@ -99,17 +100,16 @@ public:
     void read_from_reg(RegName reg)
     {std::invoke(reg_read_fns_[reg], this, reg);}
 
-
-/**
- * \brief data is read from serial port into the the rx_buffer.
- */
-    uint8_t rx_buffer_[MAX_PACKET_SIZE];  // TODO: should be private.
-    uint8_t rx_buffer_index_;
-
 /**
  * \brief reference to the struct of reg values for easy access.
  */
     RegValues& regs = regs_.regs_;
+
+/**
+ * \brief the total number of bytes read into the the msg receive buffer.
+ *  This is implemented as a read-only reference to the rx_buffer_index_.
+ */
+    const uint8_t& total_bytes_read_;
 
 protected:
 /**
@@ -128,6 +128,13 @@ protected:
 
     bool events_enabled()
     {return (regs.R_OPERATION_CTRL & 0x03) == ACTIVE;}
+
+/**
+ * \brief data is read from serial port into the the rx_buffer.
+ */
+    uint8_t rx_buffer_[MAX_PACKET_SIZE];
+    uint8_t rx_buffer_index_;
+
 
 private:
 

@@ -31,9 +31,16 @@ int main()
     //stdio_uart_init();
 
     while (!stdio_usb_connected()){} // Block until connected to serial port.
+    bool new_msg = false;
     while(true)
     {
-        core.run();
+        core.run(); // call this in a loop.
+        // Optional. Handle msgs outside the range of the core registers here.
+        //if (not core.new_msg)
+        //    continue;
+        //msg_t& msg = core.get_buffered_msg();
+        // handle the message here.
+        //core.clear_msg();
     }
     return 0;
 }

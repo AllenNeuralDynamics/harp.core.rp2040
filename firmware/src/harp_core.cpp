@@ -24,50 +24,56 @@ HarpCore::HarpCore(uint16_t who_am_i,
 :regs_{who_am_i, hw_version_major, hw_version_minor,assembly_version,
        harp_version_major, harp_version_minor,
        fw_version_major, fw_version_minor, name},
- rx_buffer_index_{0}
+ rx_buffer_index_{0}, total_bytes_read_{rx_buffer_index_}
 {
     // Create a pointer to the first (and one-and-only) instance created.
     if (self == nullptr)
         self = this;
-// TODO: Consider making this boilerplate setup virtual so it can
-//  be fully device-agnostic.
-
-// Configure USB-Serial
 }
 
 HarpCore::~HarpCore(){self = nullptr;}
 
 void HarpCore::run()
 {
-    update_register_state();
+    update_state();
     bool new_msg = process_cdc_input();
-    if (new_msg)
+    if (not new_msg)
+        return;
+    // Handle in-range register msgs. Ignore msgs outside our range.
+    msg_header_t& header = get_buffered_msg_header();
+    if (header.address < CORE_REG_COUNT)
         handle_buffered_core_message();
 }
 
 bool HarpCore::process_cdc_input()
 {
     // TODO: Consider a timeout if we never receive a fully formed message.
-    // TODO: if the header has arrived, only read up to the payload, or
-    //  we may start reading into the next message if we are reading too slow.
     // Fetch all data in the serial port. If it's at least a header's worth,
-    // check the payload size and keep reading.
-    uint new_byte = getchar_timeout_us(0);
-    while (new_byte != PICO_ERROR_TIMEOUT)
+    // check the payload size and keep reading up to the end of the packet.
+    if (not tud_cdc_available())
+        return false;
+    // If the header has arrived, only read up to the full payload so we can
+    // process one message at a time.
+    uint32_t max_bytes_to_read = sizeof(rx_buffer_) - rx_buffer_index_;
+    if (total_bytes_read_ >= sizeof(msg_header_t))
     {
-        rx_buffer_[rx_buffer_index_++] = uint8_t(new_byte);
-        new_byte = getchar_timeout_us(0);
+        // Reinterpret contents of the rx buffer as a message header.
+        msg_header_t& header = get_buffered_msg_header();
+        // Read only the remainder of a single harp message.
+        max_bytes_to_read = header.msg_size() - total_bytes_read_;
     }
+    uint32_t bytes_read = tud_cdc_read(&(rx_buffer_[rx_buffer_index_]),
+                                       max_bytes_to_read);
+    rx_buffer_index_ += bytes_read;
     // See if we have a message header's worth of data yet. Baily early if not.
-    uint8_t bytes_read = rx_buffer_index_ + 1;
-    if (bytes_read < sizeof(msg_header_t))
+    if (total_bytes_read_ < sizeof(msg_header_t))
         return false;
-    // Reinterpret contents of the uart rx buffer as a message buffer.
-    msg_header_t& header = *((msg_header_t*)(&rx_buffer_));
-    // Bail early if the message payload has not fully arrived.
-    if (bytes_read < header.raw_length + 2)
+    // Reinterpret contents of the rx buffer as a message header.
+    msg_header_t& header = get_buffered_msg_header();
+    // Bail early if the full message (with payload) has not fully arrived.
+    if (total_bytes_read_ < header.msg_size())
         return false;
-    rx_buffer_index_ = 0; // Reset buffer index for next message.
+    rx_buffer_index_ = 0; // Reset buffer index for the next message.
     return true;
 }
 
@@ -75,11 +81,10 @@ void HarpCore::handle_buffered_core_message()
 {
     // Reinterpret contents of the uart rx buffer as a message and dispatch it.
     // Use references and ptrs so that we don't make any copies.
-    msg_header_t& header = *((msg_header_t*)(&rx_buffer_));
+    msg_header_t& header = get_buffered_msg_header();
     void* payload = rx_buffer_ + header.payload_base_index_offset();
     uint8_t& checksum = *(rx_buffer_ + header.checksum_index_offset());
     // TODO: check checksum.
-
     // Note: controller-to-device protocol interactions are such that we should
     //  never have this situation. Nevertheless, let's handle it and just
     //  ignore the timestamp information.
@@ -104,8 +109,8 @@ void HarpCore::handle_buffered_core_message()
     {
         msg_t msg{header, payload, checksum};
 /*
-        printf("I am a Pi pico with ID: %d. Data from this message (%d bytes) is: \r\n",
-               regs.R_WHO_AM_I, msg.payload_length());
+        printf("Data from this message (%d bytes) is: \r\n",
+               msg.payload_length());
         printf("msg_type: %d\r\n", msg.header.type);
         printf("raw_length: %d\r\n", msg.header.raw_length);
         printf("address: %d\r\n", msg.header.address);
@@ -133,14 +138,17 @@ void HarpCore::handle_buffered_core_message()
     }
 }
 
-void HarpCore::update_register_state()
+void HarpCore::update_state()
 {
+    uint32_t curr_time_us = time_us_32();
     //switch (regs.R_OPERATION_CTRL & 0x03) // op mode
     switch (regs_.r_operation_ctrl_bits.OP_MODE)
     {
         case STANDBY:
             break;
         case ACTIVE:
+            // Drop to STANDBY mode if we've been in active mode for too long
+            // without communication.
             break;
         case RESERVED:
             break;
@@ -149,6 +157,7 @@ void HarpCore::update_register_state()
         default:
             return;
     }
+    // Handle state LED.
 }
 
 void HarpCore::send_harp_reply(msg_type_t reply_type, RegName reg_name,
@@ -193,7 +202,6 @@ void HarpCore::send_harp_reply(msg_type_t reply_type, RegName reg_name,
     }
     tud_cdc_write_char(checksum); // push the checksum.
     tud_cdc_write_flush();  // Send usb packet, even if not full.
-
 }
 
 void HarpCore::read_reg_generic(RegName reg_name)
@@ -241,7 +249,7 @@ void HarpCore::write_timestamp_second(msg_t& msg)
     timer_hw->timelw = (uint32_t)new_time;  // Truncate.
     timer_hw->timehw = (uint32_t)(new_time >> 32);
 
-    // TODO: do we need to issue a harp reply via some sort of write_reg_generic?
+    // TODO: issue a harp reply via some sort of write_reg_generic?
 }
 
 void HarpCore::read_timestamp_microsecond(RegName reg_name)
@@ -262,7 +270,7 @@ void HarpCore::write_operation_ctrl(msg_t& msg)
 {
     uint8_t& write_byte = *((uint8_t*)msg.payload);
     // Update register state. Note: DUMP bit always reads as zero.
-    regs.R_OPERATION_CTRL = write_byte & ~(DUMP_OFFSET);
+    regs.R_OPERATION_CTRL = write_byte & ~(0x01 << DUMP_OFFSET);
     // Tease out flags.
     bool DUMP = bool((write_byte >> DUMP_OFFSET) & 0x01);
     // Bail early if we are muted.

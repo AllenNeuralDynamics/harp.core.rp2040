@@ -25,10 +25,21 @@ struct msg_header_t
     uint8_t port; // should default to 255.
     reg_type_t payload_type;
 
-    bool has_timestamp() {return bool((payload_type & HAS_TIMESTAMP) >> 4);}
-    uint8_t payload_length() {return has_timestamp()? raw_length - 10: raw_length - 4;}
-    uint8_t payload_base_index_offset() {return has_timestamp()? 11: 5;}
-    uint8_t checksum_index_offset(){return 2 + raw_length;}
+    // (Inline) Member functions:
+    bool has_timestamp()
+    {return bool((payload_type & HAS_TIMESTAMP) >> 4);}
+
+    uint8_t payload_length()
+    {return has_timestamp()? raw_length - 10: raw_length - 4;}
+
+    uint8_t payload_base_index_offset()
+    {return has_timestamp()? 11: 5;}
+
+    uint8_t checksum_index_offset()
+    {return 2 + raw_length;}
+
+    uint8_t msg_size()
+    {return raw_length + 2;}
 };
 #pragma pack(pop)
 
@@ -45,9 +56,13 @@ struct msg_t
     msg_t(msg_header_t& header, void* payload, uint8_t& checksum)
         :header{header}, payload{payload}, checksum{checksum}
     {}
-    // Member functions:
-    bool has_timestamp() {return header.has_timestamp();}
-    uint8_t payload_length() {return header.payload_length();}
+
+    // (Inline) Member functions:
+    bool has_timestamp()
+    {return header.has_timestamp();}
+
+    uint8_t payload_length()
+    {return header.payload_length();}
 };
 
 struct timestamped_msg_t: public msg_t

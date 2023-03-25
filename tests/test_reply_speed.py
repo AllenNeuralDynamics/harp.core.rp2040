@@ -10,7 +10,7 @@ from time import sleep, perf_counter
 from matplotlib import pyplot as plt
 
 
-ROUND_TRIPS = 30000
+ROUND_TRIPS = 50000
 
 
 # Open the device and print the info on screen
@@ -24,26 +24,25 @@ else: # assume Windows.
 
 timestamps_t = np.zeros(ROUND_TRIPS, dtype=float);
 
+print(f"Performing {ROUND_TRIPS}x round trips. "
+       "(Message from PC to Harp device. Reply from Harp device to PC.)")
 for i in range(ROUND_TRIPS):
     #timestamps_t[i] = device.send(HarpMessage.ReadU8(Regs.OPERATION_CTRL).frame).timestamp
-    # TODO: where is the delay coming from? Is it the time sending the message?
-    #   The time it takes for the device to reply?
     device.send(HarpMessage.ReadU8(Regs.OPERATION_CTRL).frame).timestamp
     timestamps_t[i] = perf_counter()
 
 time_deltas_t = np.diff(timestamps_t)
-print(f"Summary for {ROUND_TRIPS}x round trips. "
-       "(Message from PC to Harp device. Reply from Harp device to PC.)")
+print(f"Summary:")
 print(f"mean: {np.mean(time_deltas_t):.6f}")
 print(f"std dev: {np.std(time_deltas_t):.6f}")
-print(f"max: {np.max(time_deltas_t):.6f}")
-argmax = np.argmax(time_deltas_t)
-print(f"argmax: {argmax}")
-print(time_deltas_t[argmax - 3: argmax + 3])
-print(timestamps_t[argmax - 3: argmax + 3])
+print(f"max: {np.max(time_deltas_t):.6f} at index: {np.argmax(time_deltas_t)}")
+#print(time_deltas_t[argmax - 3: argmax + 3])
+#print(timestamps_t[argmax - 3: argmax + 3])
 print()
-large_value_locations = np.where(time_deltas_t > 0.005)
+large_value_locations = np.where(time_deltas_t > 0.003)
+print("The following delay times are large:")
 print(large_value_locations)
+print("indexes of the large delay times:")
 print([time_deltas_t[i] for i in large_value_locations])
 
 
