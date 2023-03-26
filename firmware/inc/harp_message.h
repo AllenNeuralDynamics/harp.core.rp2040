@@ -27,7 +27,7 @@ struct msg_header_t
 
     // (Inline) Member functions:
     bool has_timestamp()
-    {return bool((payload_type & HAS_TIMESTAMP) >> 4);}
+    {return bool(payload_type & HAS_TIMESTAMP);}
 
     uint8_t payload_length()
     {return has_timestamp()? raw_length - 10: raw_length - 4;}

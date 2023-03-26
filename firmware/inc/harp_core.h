@@ -6,6 +6,7 @@
 #include <arm_regs.h>
 #include <functional>  // for std::invoke
 
+// Pico-specific includes.
 #include <hardware/structs/timer.h>
 #include <hardware/timer.h>
 #include <tusb.h>
@@ -60,20 +61,26 @@ public:
     void run();
 
 /**
- * \brief Read incoming bytes from the USB serial port. Returns true
- *      if a new message has been received. Does not block.
+ * \brief Read incoming bytes from the USB serial port. Does not block.
  *  \note If called again after returning true, the buffered message may be
  *      be overwritten.
  */
-    bool process_cdc_input();
+    void process_cdc_input();
 
 /**
- * \brief return a reference to the message header in the rx_buffer. Inline.
+ * \brief return a reference to the message header in the rx_buffer.
  * \note this should only be accessed if process_cdc_input returns true or
  *      total_bytes_read_ >= sizeof(msg_header_t).
  */
     msg_header_t& get_buffered_msg_header()
     {return *((msg_header_t*)(&rx_buffer_));}
+
+/**
+ * \brief return a reference to the message in the rx_buffer. Inline.
+ * \note this should only be accessed if process_cdc_input returns true or
+ *      total_bytes_read_ >= sizeof(msg_header_t).
+ */
+    msg_t get_buffered_msg();
 
 /**
  * \brief entry point for handling incoming harp messages to core registers.
@@ -111,6 +118,20 @@ public:
  */
     const uint8_t& total_bytes_read_;
 
+
+/**
+ * \brief flag indicating whether or not a new message is in the rx_buffer_.
+ */
+    bool new_msg()
+    {return new_msg_;}
+
+/**
+ * \brief flag that new message has been handled. Inline.
+ * \note Does not affect internal behavior.
+ */
+    void clear_msg()
+    {new_msg_ = false;}
+
 protected:
 /**
  * \brief Send a Harp-compliant timestamped reply message.
@@ -134,6 +155,10 @@ protected:
  */
     uint8_t rx_buffer_[MAX_PACKET_SIZE];
     uint8_t rx_buffer_index_;
+/**
+ * \brief flag indicating whether or not a new message is in the rx_buffer_.
+ */
+    bool new_msg_;
 
 
 private:

@@ -6,6 +6,7 @@
 #include <cstring>
 #include <tusb.h>
 
+
 // Create device name array.
 const uint16_t who_am_i = 1216;
 const uint8_t hw_version_major = 1;
@@ -27,6 +28,10 @@ HarpSynchronizer& sync = HarpSynchronizer::init(uart0, 1);
 // Core0 main.
 int main()
 {
+    gpio_init(PICO_DEFAULT_LED_PIN);
+    gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
+
+
     stdio_usb_init();
     //stdio_uart_init();
 
@@ -35,12 +40,17 @@ int main()
     while(true)
     {
         core.run(); // call this in a loop.
+        // run() will:
+        // 1. parse new messages into a buffer.
+        // 2. Handle register reads and write messages to core registers.
+        // 3. Reply with the appropriate harp reply for reads/writes to core
+        //    registers.
         // Optional. Handle msgs outside the range of the core registers here.
-        //if (not core.new_msg)
-        //    continue;
-        //msg_t& msg = core.get_buffered_msg();
-        // handle the message here.
-        //core.clear_msg();
+        if (not core.new_msg())
+            continue;
+        msg_t msg = core.get_buffered_msg();
+        // Handle the message here.
+        core.clear_msg();
     }
     return 0;
 }

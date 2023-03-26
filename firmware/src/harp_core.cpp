@@ -24,7 +24,7 @@ HarpCore::HarpCore(uint16_t who_am_i,
 :regs_{who_am_i, hw_version_major, hw_version_minor,assembly_version,
        harp_version_major, harp_version_minor,
        fw_version_major, fw_version_minor, name},
- rx_buffer_index_{0}, total_bytes_read_{rx_buffer_index_}
+ rx_buffer_index_{0}, total_bytes_read_{rx_buffer_index_}, new_msg_{false}
 {
     // Create a pointer to the first (and one-and-only) instance created.
     if (self == nullptr)
@@ -36,8 +36,8 @@ HarpCore::~HarpCore(){self = nullptr;}
 void HarpCore::run()
 {
     update_state();
-    bool new_msg = process_cdc_input();
-    if (not new_msg)
+    process_cdc_input();
+    if (not new_msg_)
         return;
     // Handle in-range register msgs. Ignore msgs outside our range.
     msg_header_t& header = get_buffered_msg_header();
@@ -45,13 +45,13 @@ void HarpCore::run()
         handle_buffered_core_message();
 }
 
-bool HarpCore::process_cdc_input()
+void HarpCore::process_cdc_input()
 {
     // TODO: Consider a timeout if we never receive a fully formed message.
     // Fetch all data in the serial port. If it's at least a header's worth,
     // check the payload size and keep reading up to the end of the packet.
     if (not tud_cdc_available())
-        return false;
+        return;
     // If the header has arrived, only read up to the full payload so we can
     // process one message at a time.
     uint32_t max_bytes_to_read = sizeof(rx_buffer_) - rx_buffer_index_;
@@ -67,47 +67,32 @@ bool HarpCore::process_cdc_input()
     rx_buffer_index_ += bytes_read;
     // See if we have a message header's worth of data yet. Baily early if not.
     if (total_bytes_read_ < sizeof(msg_header_t))
-        return false;
+        return;
     // Reinterpret contents of the rx buffer as a message header.
     msg_header_t& header = get_buffered_msg_header();
     // Bail early if the full message (with payload) has not fully arrived.
     if (total_bytes_read_ < header.msg_size())
-        return false;
+        return;
     rx_buffer_index_ = 0; // Reset buffer index for the next message.
-    return true;
+    new_msg_ = true;
+    return;
 }
 
-void HarpCore::handle_buffered_core_message()
+msg_t HarpCore::get_buffered_msg()
 {
     // Reinterpret contents of the uart rx buffer as a message and dispatch it.
     // Use references and ptrs so that we don't make any copies.
     msg_header_t& header = get_buffered_msg_header();
     void* payload = rx_buffer_ + header.payload_base_index_offset();
     uint8_t& checksum = *(rx_buffer_ + header.checksum_index_offset());
+    return msg_t{header, payload, checksum};
+}
+
+void HarpCore::handle_buffered_core_message()
+{
+    msg_t msg = get_buffered_msg();
     // TODO: check checksum.
-    // Note: controller-to-device protocol interactions are such that we should
-    //  never have this situation. Nevertheless, let's handle it and just
-    //  ignore the timestamp information.
-    if (header.has_timestamp())
-    {
-        uint32_t timestamp_sec = uint32_t(*(rx_buffer_ + 5));
-        uint16_t timestamp_usec = uint16_t(*(rx_buffer_ + 9));
-        timestamped_msg_t msg{header, timestamp_sec, timestamp_usec,
-                              payload, checksum};
-        // Handle read-or-write behavior.
-        switch (msg.header.type)
-        {
-            case READ:
-                return read_from_reg((RegName)msg.header.address);
-            case WRITE:
-                return write_to_reg(msg);
-            default:
-                break;
-        }
-    }
-    else
-    {
-        msg_t msg{header, payload, checksum};
+    // Note: PC-to-Harp msgs don't have timestamps, so we don't check for them.
 /*
         printf("Data from this message (%d bytes) is: \r\n",
                msg.payload_length());
@@ -119,23 +104,18 @@ void HarpCore::handle_buffered_core_message()
         for (auto i = 0; i < msg.payload_length(); ++i)
             printf("%d, ", ((uint8_t*)(msg.payload))[i]);
         printf("\r\n");
-
-        printf("address of header: %d | ", &header);
-        printf("address of msg.header: %d\r\n", &(msg.header));
-        printf("address of checksum: %d | ", &checksum);
-        printf("address of checksum: %d | ", &(msg.checksum));
 */
-        // Handle read-or-write behavior.
-        switch (msg.header.type)
-        {
-            case READ:
-                return read_from_reg((RegName)msg.header.address);
-            case WRITE:
-                return write_to_reg(msg);
-            default:
-                break;
-        }
+    // Handle read-or-write behavior.
+    switch (msg.header.type)
+    {
+        case READ:
+            return read_from_reg((RegName)msg.header.address);
+        case WRITE:
+            return write_to_reg(msg);
+        default:
+            break;
     }
+    clear_msg();
 }
 
 void HarpCore::update_state()
