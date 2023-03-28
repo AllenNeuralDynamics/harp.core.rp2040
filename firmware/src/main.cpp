@@ -32,13 +32,13 @@ int main()
     gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
 
 
-    stdio_usb_init();
+    tusb_init();
     //stdio_uart_init();
 
-    while (!stdio_usb_connected()){} // Block until connected to serial port.
-    bool new_msg = false;
+    //while (!tud_cdc_connected()){} // Block until connected to serial port.
     while(true)
     {
+        tud_task();
         core.run(); // call this in a loop.
         // run() will:
         // 1. parse new messages into a buffer.
