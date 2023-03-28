@@ -7,6 +7,7 @@ HarpCore& HarpCore::init(uint16_t who_am_i,
                          uint8_t fw_version_major, uint8_t fw_version_minor,
                          const char name[])
 {
+    tusb_init();
     // Create the singleton instance using the private constructor.
     static HarpCore core(who_am_i, hw_version_major, hw_version_minor,
                           assembly_version,
@@ -35,6 +36,7 @@ HarpCore::~HarpCore(){self = nullptr;}
 
 void HarpCore::run()
 {
+    tud_task();
     update_state();
     process_cdc_input();
     if (not new_msg_)

@@ -21,6 +21,10 @@ add_library(core_registers
     src/core_registers.cpp
 )
 
+add_library(usb_desc
+    src/usb_descriptors.c
+)
+
 add_library(harp_core
     src/harp_core.cpp
 )
@@ -30,31 +34,24 @@ add_library(harp_sync
 )
 
 # Where to look for header files.
-#target_include_directories(${PROJECT_NAME} PUBLIC inc)
-
-# Where to look for header files.
 #target_include_directories(brushed_motor_controller PUBLIC inc)
 include_directories(inc)
 
 # For Debugging.
-# Print state change information.
 #add_definitions(-DDEBUG)
 
-
-# Link libraries to the targets that need them.
-#target_link_libraries(<target> <lib0> <lib1>)
-
+target_link_libraries(usb_desc tinyusb_device pico_unique_id)
 target_link_libraries(harp_sync pico_stdlib)
-target_link_libraries(harp_core core_registers pico_stdlib)
+target_link_libraries(harp_core core_registers pico_stdlib tinyusb_device usb_desc)
 target_link_libraries(${PROJECT_NAME} pico_stdlib harp_core harp_sync)
 
 # create map/bin/hex/uf2 file in addition to ELF.
 pico_add_extra_outputs(${PROJECT_NAME})
 
 # USB serial. Eventually implement this natively with cdc calls from tinyusb.
-pico_enable_stdio_usb(${PROJECT_NAME} 1)
-pico_enable_stdio_uart(${PROJECT_NAME} 0)
+#pico_enable_stdio_usb(${PROJECT_NAME} 0)
+pico_enable_stdio_uart(${PROJECT_NAME} 1)
 
 # Additional libraries need to have stdio init also.
-pico_enable_stdio_usb(harp_core 1)
-pico_enable_stdio_uart(harp_core 0)
+#pico_enable_stdio_usb(harp_core 0)
+pico_enable_stdio_uart(harp_core 1)

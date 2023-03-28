@@ -4,7 +4,6 @@
 #include <pico/stdlib.h>
 #include <cstdio>
 #include <cstring>
-#include <tusb.h>
 
 
 // Create device name array.
@@ -31,12 +30,10 @@ int main()
     gpio_init(PICO_DEFAULT_LED_PIN);
     gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
 
-
-    stdio_usb_init();
-    //stdio_uart_init();
-
-    while (!stdio_usb_connected()){} // Block until connected to serial port.
-    bool new_msg = false;
+#ifdef DEBUG
+    stdio_uart_init_full(uart0, 115200, 0, -1); // use uart0 tx only.
+    printf("Hello, from a Pi Pico!\r\n");
+#endif
     while(true)
     {
         core.run(); // call this in a loop.
