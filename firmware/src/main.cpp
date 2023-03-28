@@ -4,7 +4,6 @@
 #include <pico/stdlib.h>
 #include <cstdio>
 #include <cstring>
-#include <tusb.h>
 
 
 // Create device name array.
@@ -31,14 +30,10 @@ int main()
     gpio_init(PICO_DEFAULT_LED_PIN);
     gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
 
-
-    tusb_init();
     //stdio_uart_init();
 
-    //while (!tud_cdc_connected()){} // Block until connected to serial port.
     while(true)
     {
-        tud_task();
         core.run(); // call this in a loop.
         // run() will:
         // 1. parse new messages into a buffer.

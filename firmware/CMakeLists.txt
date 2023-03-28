@@ -43,7 +43,7 @@ include_directories(inc)
 target_link_libraries(usb_desc tinyusb_device pico_unique_id)
 target_link_libraries(harp_sync pico_stdlib)
 target_link_libraries(harp_core core_registers pico_stdlib tinyusb_device usb_desc)
-target_link_libraries(${PROJECT_NAME} pico_stdlib harp_core harp_sync tinyusb_device usb_desc)
+target_link_libraries(${PROJECT_NAME} pico_stdlib harp_core harp_sync)
 
 # create map/bin/hex/uf2 file in addition to ELF.
 pico_add_extra_outputs(${PROJECT_NAME})

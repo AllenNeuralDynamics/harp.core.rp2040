@@ -5,11 +5,11 @@
 #include <core_registers.h>
 #include <arm_regs.h>
 #include <functional>  // for std::invoke
+#include <tusb.h>
 
 // Pico-specific includes.
 #include <hardware/structs/timer.h>
 #include <hardware/timer.h>
-#include <tusb.h>
 
 
 /**
@@ -36,7 +36,7 @@ public:
     void operator=(const HarpCore& other) = delete; // Disable assignment operator.
 
 /**
- * \brief initialize the harp core singleton with parameters.
+ * \brief initialize the harp core singleton with parameters and init Tinyusb.
  */
     static HarpCore& init(uint16_t who_am_i,
                           uint8_t hw_version_major, uint8_t hw_version_minor,
