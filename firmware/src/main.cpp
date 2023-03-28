@@ -30,8 +30,10 @@ int main()
     gpio_init(PICO_DEFAULT_LED_PIN);
     gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
 
-    //stdio_uart_init();
-
+#ifdef DEBUG
+    stdio_uart_init_full(uart0, 115200, 0, -1); // use uart0 tx only.
+    printf("Hello, from a Pi Pico!\r\n");
+#endif
     while(true)
     {
         core.run(); // call this in a loop.

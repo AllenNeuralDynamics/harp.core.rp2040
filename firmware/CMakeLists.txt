@@ -50,8 +50,8 @@ pico_add_extra_outputs(${PROJECT_NAME})
 
 # USB serial. Eventually implement this natively with cdc calls from tinyusb.
 #pico_enable_stdio_usb(${PROJECT_NAME} 0)
-pico_enable_stdio_uart(${PROJECT_NAME} 0)
+pico_enable_stdio_uart(${PROJECT_NAME} 1)
 
 # Additional libraries need to have stdio init also.
 #pico_enable_stdio_usb(harp_core 0)
-pico_enable_stdio_uart(harp_core 0)
+pico_enable_stdio_uart(harp_core 1)
