@@ -83,7 +83,7 @@ void HarpCore::process_cdc_input()
 msg_t HarpCore::get_buffered_msg()
 {
     // Reinterpret contents of the uart rx buffer as a message and dispatch it.
-    // Use references and ptrs so that we don't make any copies.
+    // Use references and ptrs to existing data so we don't make any copies.
     msg_header_t& header = get_buffered_msg_header();
     void* payload = rx_buffer_ + header.payload_base_index_offset();
     uint8_t& checksum = *(rx_buffer_ + header.checksum_index_offset());
@@ -96,7 +96,7 @@ void HarpCore::handle_buffered_core_message()
     // TODO: check checksum.
     // Note: PC-to-Harp msgs don't have timestamps, so we don't check for them.
 #ifdef DEBUG
-        printf("Message data: \r\n");
+        printf("Msg data: \r\n");
         printf("  type: %d\r\n", msg.header.type);
         printf("  raw length: %d\r\n", msg.header.raw_length);
         printf("  address: %d\r\n", msg.header.address);
@@ -111,10 +111,10 @@ void HarpCore::handle_buffered_core_message()
     switch (msg.header.type)
     {
         case READ:
-            return read_from_reg((RegName)msg.header.address);
+            read_from_reg((RegName)msg.header.address);
+            break;
         case WRITE:
-            return write_to_reg(msg);
-        default:
+            write_to_reg(msg);
             break;
     }
     clear_msg();

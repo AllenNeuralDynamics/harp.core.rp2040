@@ -45,7 +45,6 @@ int main()
         // Optional. Handle msgs outside the range of the core registers here.
         if (not core.new_msg())
             continue;
-        msg_t msg = core.get_buffered_msg();
         // Handle the message here.
         core.clear_msg();
     }

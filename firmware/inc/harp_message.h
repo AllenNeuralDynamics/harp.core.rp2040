@@ -44,7 +44,7 @@ struct msg_header_t
 #pragma pack(pop)
 
 // Reference-only convenience classes.
-// The data needs to exist elsewhere (i.e: in the RX buffer.
+// The data needs to exist elsewhere (i.e: in the RX buffer).
 struct msg_t
 {
     msg_header_t& header;
