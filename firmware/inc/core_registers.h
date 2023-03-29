@@ -76,7 +76,7 @@ struct RegValues
 
 struct RegSpecs
 {
-    const volatile uint8_t* base_ptr;
+    volatile uint8_t* const base_ptr;
     const uint8_t num_bytes;
     const reg_type_t payload_type;
 };
@@ -93,7 +93,6 @@ struct Registers
         ~Registers();
 
     RegValues regs_;
-//    RegValues& regs = regs_;
 
     // Lookup table. Necessary because register data is not of equal size,
     //  so we can't index into it directly by enum.

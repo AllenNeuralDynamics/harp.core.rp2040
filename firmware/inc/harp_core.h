@@ -4,7 +4,8 @@
 #include <harp_message.h>
 #include <core_registers.h>
 #include <arm_regs.h>
-#include <functional>  // for std::invoke
+#include <functional> // for std::invoke
+#include <cstring> // for memcpy
 #include <tusb.h>
 
 // Pico-specific includes.
@@ -187,6 +188,13 @@ private:
     void write_clock_config(msg_t& msg);
     void write_timestamp_offset(msg_t& msg);
 
+/**
+ * \brief generic write a message payload to a register.
+ * \note writing more data than the size of the register will sequentially
+ *      write to the next register. In this way, you can write to multiple
+ *      sequential registers starting from the msg.address.
+ */
+    void write_reg_generic(msg_t& msg);
     void write_to_read_only_reg_error(msg_t& msg);
 
 /**

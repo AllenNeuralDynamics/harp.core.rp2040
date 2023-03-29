@@ -95,18 +95,18 @@ void HarpCore::handle_buffered_core_message()
     msg_t msg = get_buffered_msg();
     // TODO: check checksum.
     // Note: PC-to-Harp msgs don't have timestamps, so we don't check for them.
-/*
-        printf("Data from this message (%d bytes) is: \r\n",
-               msg.payload_length());
-        printf("msg_type: %d\r\n", msg.header.type);
-        printf("raw_length: %d\r\n", msg.header.raw_length);
-        printf("address: %d\r\n", msg.header.address);
-        printf("port: %d\r\n", msg.header.port);
-        printf("payload_type: %d\r\n", msg.header.payload_type);
+#ifdef DEBUG
+        printf("Message data: \r\n");
+        printf("  type: %d\r\n", msg.header.type);
+        printf("  raw length: %d\r\n", msg.header.raw_length);
+        printf("  address: %d\r\n", msg.header.address);
+        printf("  port: %d\r\n", msg.header.port);
+        printf("  payload type: %d\r\n", msg.header.payload_type);
+        printf("  payload: ");
         for (auto i = 0; i < msg.payload_length(); ++i)
             printf("%d, ", ((uint8_t*)(msg.payload))[i]);
-        printf("\r\n");
-*/
+        printf("\r\n\r\n");
+#endif
     // Handle read-or-write behavior.
     switch (msg.header.type)
     {
@@ -193,12 +193,26 @@ void HarpCore::read_reg_generic(RegName reg_name)
                     specs.payload_type);
 }
 
+void HarpCore::write_reg_generic(msg_t& msg)
+{
+    const RegSpecs& specs = regs_.enum_to_reg_specs[msg.header.address];
+    const RegName& reg_name = (RegName)msg.header.address;
+    memcpy((void*)specs.base_ptr, msg.payload, specs.num_bytes);
+    if (is_muted())
+        return;
+    send_harp_reply(WRITE, reg_name, specs.base_ptr, specs.num_bytes,
+                    specs.payload_type);
+}
+
 void HarpCore::write_to_read_only_reg_error(msg_t& msg)
 {
 #ifdef DEBUG
-    printf("Error: Reg address %d is read-only.\r\n", &msg.address);
+    printf("Error: Reg address %d is read-only.\r\n", msg.header.address);
 #endif
-//    send_harp_reply(ERROR);
+    const RegSpecs& specs = regs_.enum_to_reg_specs[msg.header.address];
+    const RegName& reg_name = (RegName)msg.header.address;
+    send_harp_reply(WRITE_ERROR, reg_name, specs.base_ptr, specs.num_bytes,
+                    specs.payload_type);
 }
 
 void HarpCore::update_timestamp_regs()
@@ -230,8 +244,12 @@ void HarpCore::write_timestamp_second(msg_t& msg)
     // Update low register first.
     timer_hw->timelw = (uint32_t)new_time;  // Truncate.
     timer_hw->timehw = (uint32_t)(new_time >> 32);
-
-    // TODO: issue a harp reply via some sort of write_reg_generic?
+    // Send harp reply.
+    // Note: harp timestamp registers will be updated before being dispatched.
+    const RegSpecs& specs = regs_.enum_to_reg_specs[msg.header.address];
+    const RegName& reg_name = (RegName)msg.header.address;
+    send_harp_reply(WRITE, reg_name, specs.base_ptr, specs.num_bytes,
+                    specs.payload_type);
 }
 
 void HarpCore::read_timestamp_microsecond(RegName reg_name)
@@ -243,9 +261,15 @@ void HarpCore::read_timestamp_microsecond(RegName reg_name)
 
 void HarpCore::write_timestamp_microsecond(msg_t& msg)
 {
-    const uint32_t& microseconds = ((uint32_t)(*((uint16_t*)msg.payload))) << 5;
+    const uint32_t microseconds = ((uint32_t)(*((uint16_t*)msg.payload))) << 5;
     // PICO implementation: replace the current number of elapsed microseconds.
     timer_hw->timelw = (time_us_32() & ~0x001FFFFF) +  microseconds;
+    // Send harp reply.
+    // Note: harp timestamp registers will be updated before being dispatched.
+    const RegSpecs& specs = regs_.enum_to_reg_specs[msg.header.address];
+    const RegName& reg_name = (RegName)msg.header.address;
+    send_harp_reply(WRITE, reg_name, specs.base_ptr, specs.num_bytes,
+                    specs.payload_type);
 }
 
 void HarpCore::write_operation_ctrl(msg_t& msg)
@@ -271,8 +295,7 @@ void HarpCore::write_operation_ctrl(msg_t& msg)
 void HarpCore::write_reset_def(msg_t& msg)
 {
     // TODO.
-    if (is_muted())
-        return;
+    write_reg_generic(msg);
 }
 
 void HarpCore::write_device_name(msg_t& msg)
@@ -281,28 +304,24 @@ void HarpCore::write_device_name(msg_t& msg)
     // PICO implementation. Write to allocated flash memory
     // since we have no eeprom.
 // https://github.com/raspberrypi/pico-examples/blob/master/flash/program/flash_program.c
-    if (is_muted())
-        return;
+    write_reg_generic(msg);
 }
 
 void HarpCore::write_serial_number(msg_t& msg)
 {
     // TODO.
-    if (is_muted())
-        return;
+    write_reg_generic(msg);
 }
 
 void HarpCore::write_clock_config(msg_t& msg)
 {
     // TODO.
-    if (is_muted())
-        return;
+    write_reg_generic(msg);
 }
 
 void HarpCore::write_timestamp_offset(msg_t& msg)
 {
     // TODO.
-    if (is_muted())
-        return;
+    write_reg_generic(msg);
 }
 
