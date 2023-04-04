@@ -11,6 +11,14 @@
 #define HARP_SYNC_STOP_BITS (1)
 #define HARP_SYNC_PARITY (UART_PARITY_NONE)
 
+#define HARP_SYNC_OFFSET_US (672)   // time (in [us]) between start of last
+                                    // packet byte and the time specified in
+                                    // that packet.
+
+#define HARP_SYNC_OFFSET_US (HARP_SYNC_OFFSET_US - 90)    // Offset from end last packet
+                                                // byte and the time specified
+                                                // in that packet.
+
 extern volatile uint8_t packet_index;
 extern volatile uint8_t sync_data[6];
 extern volatile uint32_t last_time_us;
@@ -19,6 +27,14 @@ extern volatile uint32_t last_time_us;
 //  specific uart input. Singleton.
 class HarpSynchronizer
 {
+public:
+    enum SyncState
+    {
+        RECEIVE_HEADER_0,
+        RECEIVE_HEADER_1,
+        RECEIVE_TIMESTAMP
+    };
+
 private:
     // Make constructor private.
     HarpSynchronizer(uart_inst_t* uart_id, uint8_t uart_rx_pin);
@@ -46,8 +62,9 @@ private:
     static void uart_rx_callback();
 
     uart_inst_t* uart_id_;
+    volatile SyncState state_;
     volatile uint8_t packet_index_;
-    volatile uint8_t sync_data_[6];
+    volatile uint8_t sync_data_[4];
     volatile uint32_t last_char_received_time_us_;
 };
 

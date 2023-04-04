@@ -277,11 +277,11 @@ void HarpCore::write_operation_ctrl(msg_t& msg)
     uint8_t& write_byte = *((uint8_t*)msg.payload);
     // Update register state. Note: DUMP bit always reads as zero.
     regs.R_OPERATION_CTRL = write_byte & ~(0x01 << DUMP_OFFSET);
-    // Tease out flags.
-    bool DUMP = bool((write_byte >> DUMP_OFFSET) & 0x01);
     // Bail early if we are muted.
     if (is_muted())
         return;
+    // Tease out flags.
+    bool DUMP = bool((write_byte >> DUMP_OFFSET) & 0x01);
     // Send reply. If DUMP: reply is all registers serialized (little-endian).
     const RegSpecs& specs = regs_.enum_to_reg_specs[msg.header.address];
     const RegName& reg_name = (RegName)msg.header.address;

@@ -1,10 +1,9 @@
 #include <harp_synchronizer.h>
 
-// RX interrupt handler
 
 HarpSynchronizer::HarpSynchronizer(uart_inst_t* uart_id, uint8_t uart_rx_pin)
 :uart_id_{uart_id}, packet_index_{0}, sync_data_{0, 0, 0, 0, 0, 0},
- last_char_received_time_us_{time_us_32()}
+ state_{RECEIVE_HEADER}, last_char_received_time_us_{time_us_32()}
 {
     // Create a pointer to the first (and one-and-only) instance created.
     if (self == nullptr)
@@ -40,35 +39,44 @@ HarpSynchronizer& HarpSynchronizer::init(uart_inst_t* uart_id,
 
 void HarpSynchronizer::uart_rx_callback()
 {
-    // Update seconds and microseconds to be current time
-    // (i.e:  572 usec before the specified second.)
+    SyncState next_state_{state_};  // Init next state with curr state value.
+    uint8_t new_byte;
+    // This State machine "ticks" every time we receive at least one new byte.
+    // Handle next-state logic.
     while (uart_is_readable(self->uart_id_))
     {
-        // Reset packet index if it's been a while since we received data.
-        uint32_t curr_time_us = time_us_32();
-        if (curr_time_us - self->last_char_received_time_us_ > 500)
+        new_byte = uart_getc(self->uart_id_);
+        switch (state_)
         {
-            self->packet_index_ = 0;
+            case RECEIVE_HEADER_0:
+                if (new_byte == 0xAA)
+                    next_state_ = RECEIVE_HEADER_1;
+                break;
+            case RECEIVE_HEADER_1:
+                if (new_byte == 0xAF)
+                    next_state_ = RECEIVE_TIMESTAMP;
+                else
+                    next_state_ = RECEIVE_HEADER_0;
+                break;
+            case RECEIVE_TIMESTAMP:
+                sync_data_[packet_index_++] = new_byte;
+                if (packet_index_ == 4)
+                    new_timestamp_ = true;
+                break;
         }
-        self->last_char_received_time_us_ = curr_time_us;
-        // Read the incoming byte.
-        self->sync_data_[self->packet_index_++] = uart_getc(self->uart_id_);
-        if (self->packet_index_ == 6);
-        {
-            // Update timestamp register seconds and microseconds.
-            if (self->sync_data_[0] == 0xAA && self->sync_data_[1] == 0xAF)
-            {
-                // Interpret 4-byte sequence from index 2 onwards as a
-                // little-endian uint32_t.
-                uint64_t curr_us = uint64_t(*((uint32_t*)(&self->sync_data_[2]))) * 1000000 - 572;
-                timer_hw->timelw = (uint32_t)curr_us;
-                timer_hw->timehw = (uint32_t)(curr_us >> 32);
-            }
-            // Reset for the next packet.
-            self->packet_index_ = 0;
-            self->sync_data_[0] = 0;
-            self->sync_data_[1] = 0;
-        }
+        state_ = next_state_;
     }
+    if (not new_timestamp_)
+        return;
+    // Apply new timestamp data.
+    // Interpret 4-byte sequence from index 2 onwards as a
+    // little-endian uint32_t.
+    uint64_t curr_us = uint64_t(*((uint32_t*)(&self->sync_data_[2]))) * 1000000
+                       - HARP_SYNC_OFFSET_US;
+    timer_hw->timelw = (uint32_t)curr_us;
+    timer_hw->timehw = (uint32_t)(curr_us >> 32);
+    // Cleanup
+    packet_index_ = 0;
+    new_timestamp_ = false;
 }
 
