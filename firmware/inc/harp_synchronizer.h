@@ -15,9 +15,10 @@
                                     // packet byte and the time specified in
                                     // that packet.
 
-#define HARP_SYNC_OFFSET_US (HARP_SYNC_OFFSET_US - 90)    // Offset from end last packet
-                                                // byte and the time specified
-                                                // in that packet.
+#define HARP_SYNC_OFFSET_US (HARP_SYNC_OFFSET_US-90) // Offset from end of the
+                                                     // last packet byte to the
+                                                     // time specified in that
+                                                     // packet.
 
 extern volatile uint8_t packet_index;
 extern volatile uint8_t sync_data[6];

@@ -3,7 +3,7 @@
 
 HarpSynchronizer::HarpSynchronizer(uart_inst_t* uart_id, uint8_t uart_rx_pin)
 :uart_id_{uart_id}, packet_index_{0}, sync_data_{0, 0, 0, 0, 0, 0},
- state_{RECEIVE_HEADER}, last_char_received_time_us_{time_us_32()}
+ state_{RECEIVE_HEADER}, new_timestamp_{false}
 {
     // Create a pointer to the first (and one-and-only) instance created.
     if (self == nullptr)
@@ -43,7 +43,7 @@ void HarpSynchronizer::uart_rx_callback()
     uint8_t new_byte;
     // This State machine "ticks" every time we receive at least one new byte.
     // Handle next-state logic.
-    while (uart_is_readable(self->uart_id_))
+    while (uart_is_readable(self->uart_id_) and not new_timestamp_)
     {
         new_byte = uart_getc(self->uart_id_);
         switch (state_)
@@ -61,7 +61,10 @@ void HarpSynchronizer::uart_rx_callback()
             case RECEIVE_TIMESTAMP:
                 sync_data_[packet_index_++] = new_byte;
                 if (packet_index_ == 4)
+                {
                     new_timestamp_ = true;
+                    next_state_ = RECEIVE_HEADER_0;
+                }
                 break;
         }
         state_ = next_state_;
@@ -69,13 +72,12 @@ void HarpSynchronizer::uart_rx_callback()
     if (not new_timestamp_)
         return;
     // Apply new timestamp data.
-    // Interpret 4-byte sequence from index 2 onwards as a
-    // little-endian uint32_t.
-    uint64_t curr_us = uint64_t(*((uint32_t*)(&self->sync_data_[2]))) * 1000000
+    // Interpret 4-byte sequence as a little-endian uint32_t.
+    uint64_t curr_us = uint64_t(*((uint32_t*)(&self->sync_data_[0]))) * 1000000
                        - HARP_SYNC_OFFSET_US;
     timer_hw->timelw = (uint32_t)curr_us;
     timer_hw->timehw = (uint32_t)(curr_us >> 32);
-    // Cleanup
+    // Cleanup.
     packet_index_ = 0;
     new_timestamp_ = false;
 }
