@@ -53,4 +53,5 @@ if(DEFINED <DEBUG>)
     pico_enable_stdio_uart(${PROJECT_NAME} 1)
     # Additional libraries need to have stdio init also.
     pico_enable_stdio_uart(harp_core 1)
+    pico_enable_stdio_uart(harp_sync 1)
 endif()
