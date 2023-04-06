@@ -82,7 +82,7 @@ void HarpCore::process_cdc_input()
 
 msg_t HarpCore::get_buffered_msg()
 {
-    // Reinterpret contents of the uart rx buffer as a message and dispatch it.
+    // Reinterpret (i.e: type pun) contents of the uart rx buffer as a message.
     // Use references and ptrs to existing data so we don't make any copies.
     msg_header_t& header = get_buffered_msg_header();
     void* payload = rx_buffer_ + header.payload_base_index_offset();
