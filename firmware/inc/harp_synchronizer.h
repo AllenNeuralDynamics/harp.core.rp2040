@@ -4,6 +4,7 @@
 #include <pico/stdlib.h>
 #include <hardware/uart.h>
 #include <hardware/irq.h>
+#include <hardware/sync.h>
 #include <hardware/structs/timer.h>
 
 #ifdef DEBUG

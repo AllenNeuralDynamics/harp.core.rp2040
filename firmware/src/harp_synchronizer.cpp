@@ -39,6 +39,8 @@ HarpSynchronizer& HarpSynchronizer::init(uart_inst_t* uart_id,
 
 void HarpSynchronizer::uart_rx_callback()
 {
+    // Hush interrupts, since we make assumptions about how long this fn takes.
+    uint32_t interrupt_status = save_and_disable_interrupts();
     SyncState next_state_{self->state_}; // Init next state at curr state value.
     uint8_t new_byte;
     // This State machine "ticks" every time we receive at least one new byte.
@@ -76,9 +78,10 @@ void HarpSynchronizer::uart_rx_callback()
         self->state_ = next_state_;
     }
     if (not self->new_timestamp_)
+    {
+        restore_interrupts(interrupt_status);
         return;
-    // Cleanup first, in case changing time registers has adverse behavior.
-    self->new_timestamp_ = false;
+    }
     // Apply new timestamp data.
     // Interpret 4-byte sequence as a little-endian uint32_t.
     uint32_t sec = *((uint32_t*)(self->sync_data_));
@@ -88,5 +91,8 @@ void HarpSynchronizer::uart_rx_callback()
     #endif
     timer_hw->timelw = (uint32_t)curr_us;
     timer_hw->timehw = (uint32_t)(curr_us >> 32);
+    // Cleanup.
+    self->new_timestamp_ = false;
+    restore_interrupts(interrupt_status);
 }
 

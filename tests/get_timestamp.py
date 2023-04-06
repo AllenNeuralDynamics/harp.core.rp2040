@@ -21,6 +21,6 @@ else: # assume Windows.
 while True:
     reply = device.send(HarpMessage.ReadU8(Regs.OPERATION_CTRL).frame)
     print(reply.timestamp)
-    sleep(0.01)
+    sleep(0.05)
 # Close connection
 device.disconnect()
