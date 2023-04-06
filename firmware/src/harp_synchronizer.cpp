@@ -81,11 +81,7 @@ void HarpSynchronizer::uart_rx_callback()
     self->new_timestamp_ = false;
     // Apply new timestamp data.
     // Interpret 4-byte sequence as a little-endian uint32_t.
-    //uint32_t sec = *((uint16_t*)(self->sync_data_)); // works.
-    //uint32_t sec = *((uint32_t*)(self->sync_data_)); // This breaks.
-    // TODO: why can't we just reinterpret cast? Something about being volatile?
-    uint32_t sec;
-    memcpy(&sec, (const void*)&(self->sync_data_[0]), 4);
+    uint32_t sec = *((uint32_t*)(self->sync_data_));
     uint64_t curr_us = uint64_t(sec) * 1000000 - HARP_SYNC_OFFSET_US;
     #ifdef DEBUG
     printf("time is: %llu [us]\r\n", curr_us);

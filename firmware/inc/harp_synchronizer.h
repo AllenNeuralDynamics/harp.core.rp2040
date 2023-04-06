@@ -71,8 +71,12 @@ private:
 
     volatile SyncState state_;
     volatile uint8_t packet_index_;
-    volatile uint8_t sync_data_[4];
     volatile bool new_timestamp_;
+/**
+ * \brief container to store the little-endian timestamp and then
+ *  reinterpret-cast to the value.
+ */
+    alignas(uint32_t) volatile uint8_t sync_data_[4];
 };
 
 #endif // HARP_SYNCHRONIZER_H
