@@ -5,7 +5,6 @@
 #include <hardware/uart.h>
 #include <hardware/irq.h>
 #include <hardware/structs/timer.h>
-#include <cstring> // for memcpy
 
 #ifdef DEBUG
 #include <cstdio> // for printf
