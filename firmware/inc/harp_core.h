@@ -55,6 +55,14 @@ public:
     typedef void (HarpCore::*RegReadMemberFn)(RegName reg);
     typedef void (HarpCore::*RegWriteMemberFn)(msg_t& mst);
 
+    // Convenience struct for aggregating an array of fn ptrs to handle each
+    // register.
+    struct RegFnPair
+    {
+        RegReadMemberFn read_fn_ptr;
+        RegWriteMemberFn write_fn_ptr;
+    };
+
 /**
  * \brief Periodically handle tasks based on the current time, state,
  *      and inputs. Should be called in a loop.
@@ -95,18 +103,18 @@ public:
     void update_state();
 
 /**
- * \brief Write message contents to a register by dispatching message
- *      to the appropriate handler. Inline.
- */
-    void write_to_reg(msg_t& msg)
-    {std::invoke(reg_write_fns_[msg.header.address], this, msg);}
-
-/**
  * \brief Write register contents to the tx buffer by dispatching message
  *      to the appropriate handler. Inline.
  */
     void read_from_reg(RegName reg)
-    {std::invoke(reg_read_fns_[reg], this, reg);}
+    {std::invoke(reg_func_table_[reg].read_fn_ptr, this, reg);}
+
+/**
+ * \brief Write message contents to a register by dispatching message
+ *      to the appropriate handler. Inline.
+ */
+    void write_to_reg(msg_t& msg)
+    {std::invoke(reg_func_table_[msg.header.address].write_fn_ptr, this, msg);}
 
 /**
  * \brief reference to the struct of reg values for easy access.
@@ -163,7 +171,6 @@ protected:
 
 
 private:
-
     void update_timestamp_regs();  // call before reading timestamp register.
 
 /**
@@ -198,48 +205,29 @@ private:
     void write_to_read_only_reg_error(msg_t& msg);
 
 /**
- *  \brief registers.
+ *  \brief Struct of registers.
  */
     Registers regs_;
 
-    // Function Tables. Order matters since we will index into it with enums.
-    RegReadMemberFn reg_read_fns_[CORE_REG_COUNT] =
+    // Function Table. Order matters since we will index into it with enums.
+    RegFnPair reg_func_table_[CORE_REG_COUNT] =
     {
-        &HarpCore::read_reg_generic,
-        &HarpCore::read_reg_generic,
-        &HarpCore::read_reg_generic,
-        &HarpCore::read_reg_generic,
-        &HarpCore::read_reg_generic,
-        &HarpCore::read_reg_generic,
-        &HarpCore::read_reg_generic,
-        &HarpCore::read_reg_generic,
-        &HarpCore::read_timestamp_second,
-        &HarpCore::read_timestamp_microsecond,
-        &HarpCore::read_reg_generic,
-        &HarpCore::read_reg_generic,
-        &HarpCore::read_reg_generic,
-        &HarpCore::read_reg_generic,
-        &HarpCore::read_reg_generic,
-        &HarpCore::read_reg_generic,
-    };
-
-    RegWriteMemberFn reg_write_fns_[CORE_REG_COUNT] =
-    {&HarpCore::write_to_read_only_reg_error,
-     &HarpCore::write_to_read_only_reg_error,
-     &HarpCore::write_to_read_only_reg_error,
-     &HarpCore::write_to_read_only_reg_error,
-     &HarpCore::write_to_read_only_reg_error,
-     &HarpCore::write_to_read_only_reg_error,
-     &HarpCore::write_to_read_only_reg_error,
-     &HarpCore::write_to_read_only_reg_error,
-     &HarpCore::write_timestamp_second,
-     &HarpCore::write_timestamp_microsecond,
-     &HarpCore::write_operation_ctrl,
-     &HarpCore::write_reset_def,
-     &HarpCore::write_device_name,
-     &HarpCore::write_serial_number,
-     &HarpCore::write_clock_config,
-     &HarpCore::write_timestamp_offset,
+        {&HarpCore::read_reg_generic, &HarpCore::write_to_read_only_reg_error},
+        {&HarpCore::read_reg_generic, &HarpCore::write_to_read_only_reg_error},
+        {&HarpCore::read_reg_generic, &HarpCore::write_to_read_only_reg_error},
+        {&HarpCore::read_reg_generic, &HarpCore::write_to_read_only_reg_error},
+        {&HarpCore::read_reg_generic, &HarpCore::write_to_read_only_reg_error},
+        {&HarpCore::read_reg_generic, &HarpCore::write_to_read_only_reg_error},
+        {&HarpCore::read_reg_generic, &HarpCore::write_to_read_only_reg_error},
+        {&HarpCore::read_reg_generic, &HarpCore::write_to_read_only_reg_error},
+        {&HarpCore::read_timestamp_second, &HarpCore::write_timestamp_second},
+        {&HarpCore::read_timestamp_microsecond, &HarpCore::write_timestamp_microsecond},
+        {&HarpCore::read_reg_generic, &HarpCore::write_operation_ctrl},
+        {&HarpCore::read_reg_generic, &HarpCore::write_reset_def},
+        {&HarpCore::read_reg_generic, &HarpCore::write_device_name},
+        {&HarpCore::read_reg_generic, &HarpCore::write_serial_number},
+        {&HarpCore::read_reg_generic, &HarpCore::write_clock_config},
+        {&HarpCore::read_reg_generic, &HarpCore::write_timestamp_offset}
     };
 };
 
