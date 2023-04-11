@@ -2,7 +2,7 @@
 This project uses the Raspberry Pi Pico SDK as a submodule (which itself contains submodules).
 Clone and setup all required submodules with:
 ````
-git submodule update --init
+git submodule update --init --recursive
 ````
 
 ## Compiling the Firmware

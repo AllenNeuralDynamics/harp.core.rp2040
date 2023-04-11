@@ -209,7 +209,9 @@ private:
  */
     Registers regs_;
 
-    // Function Table. Order matters since we will index into it with enums.
+/**
+ * \brief Function Table. Order matters since we will index into it with enums.
+ */
     RegFnPair reg_func_table_[CORE_REG_COUNT] =
     {
         {&HarpCore::read_reg_generic, &HarpCore::write_to_read_only_reg_error},
