@@ -1,21 +1,24 @@
 cmake_minimum_required(VERSION 3.13)
 
-include(pico-sdk/pico_sdk_init.cmake)
+# Set to 1 to debug the harp core.
+set(DEBUG 0)
+
+if(NOT DEFINED PICO_SDK_PATH)
+    message(FATAL_ERROR
+            "PICO_SDK_PATH was not specified.
+             pico_sdk_init() must first be invoked.")
+endif()
+if (DEBUG)
+    add_definitions(-DDEBUG)
+endif()
+
+#option(DEBUG "If true, compile with added debug statements output to 
+#              uart at 921600 baud" OFF)
 
 project(harp_core_rp2040)
 
-# Enable try/catch exceptions. (Required for string parsing implementation.)
-set(PICO_CXX_ENABLE_EXCEPTIONS 1)
-
 # Use modern conventions like std::invoke
 set(CMAKE_CXX_STANDARD 17)
-
-# initialize the Raspberry Pi Pico SDK
-pico_sdk_init()
-
-add_executable(${PROJECT_NAME}
-    src/main.cpp
-)
 
 add_library(core_registers
     src/core_registers.cpp
@@ -33,24 +36,21 @@ add_library(harp_sync
     src/harp_synchronizer.cpp
 )
 
-# Where to look for header files.
-#target_include_directories(brushed_motor_controller PUBLIC inc)
-include_directories(inc)
+# Header file locations exposed with target scope for external projects.
+target_include_directories(core_registers PUBLIC inc)
+target_include_directories(usb_desc PUBLIC inc)
+target_include_directories(harp_sync PUBLIC inc)
+target_include_directories(harp_core PUBLIC inc)
 
-# For Debugging.
-#add_definitions(-DDEBUG)
 
 target_link_libraries(usb_desc tinyusb_device pico_unique_id)
 target_link_libraries(harp_sync pico_stdlib)
 target_link_libraries(harp_core core_registers pico_stdlib tinyusb_device usb_desc)
-target_link_libraries(${PROJECT_NAME} pico_stdlib harp_core harp_sync)
 
-# create map/bin/hex/uf2 file in addition to ELF.
-pico_add_extra_outputs(${PROJECT_NAME})
-
-if(DEFINED <DEBUG>)
+if(DEBUG)
+    message(WARNING "Debug printf() messages from harp core to UART with baud \
+            rate 921600.")
     # UART stdio for printf.
-    pico_enable_stdio_uart(${PROJECT_NAME} 1)
     # Additional libraries need to have stdio init also.
     pico_enable_stdio_uart(harp_core 1)
     pico_enable_stdio_uart(harp_sync 1)
