@@ -18,13 +18,14 @@ const uint8_t harp_version_major = 2;
 const uint8_t harp_version_minor = 0;
 const uint8_t fw_version_major = 3;
 const uint8_t fw_version_minor = 0;
+const uint16_t serial_number = 1234;
 
 // Create Core and synchronizer.
 HarpCore& core = HarpCore::init(who_am_i, hw_version_major, hw_version_minor,
                                 assembly_version,
                                 harp_version_major, harp_version_minor,
                                 fw_version_major, fw_version_minor,
-                                "Pico Harp");
+                                serial_number, "Pico Harp");
 
 // Core0 main.
 int main()

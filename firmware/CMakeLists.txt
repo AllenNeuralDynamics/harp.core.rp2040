@@ -1,13 +1,14 @@
 cmake_minimum_required(VERSION 3.13)
 
 # Set to 1 to debug the harp core.
-set(DEBUG 0)
+set(DEBUG 1)
 
 if(NOT DEFINED PICO_SDK_PATH)
     message(FATAL_ERROR
             "PICO_SDK_PATH was not specified.
              pico_sdk_init() must first be invoked.")
 endif()
+
 if (DEBUG)
     add_definitions(-DDEBUG)
 endif()

@@ -89,7 +89,7 @@ struct Registers
                   uint8_t assembly_version,
                   uint8_t harp_version_major, uint8_t harp_version_minor,
                   uint8_t fw_version_major, uint8_t fw_version_minor,
-                  const char name[]);
+                  uint16_t serial_number, const char name[]);
         ~Registers();
 
     RegValues regs_;

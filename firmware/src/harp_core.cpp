@@ -5,14 +5,15 @@ HarpCore& HarpCore::init(uint16_t who_am_i,
                          uint8_t assembly_version,
                          uint8_t harp_version_major, uint8_t harp_version_minor,
                          uint8_t fw_version_major, uint8_t fw_version_minor,
-                         const char name[])
+                         uint16_t serial_number, const char name[])
 {
     tusb_init();
     // Create the singleton instance using the private constructor.
     static HarpCore core(who_am_i, hw_version_major, hw_version_minor,
-                          assembly_version,
-                          harp_version_major, harp_version_minor,
-                          fw_version_major, fw_version_minor, name);
+                         assembly_version,
+                         harp_version_major, harp_version_minor,
+                         fw_version_major, fw_version_minor, serial_number,
+                         name);
     return core;
 }
 
@@ -21,10 +22,10 @@ HarpCore::HarpCore(uint16_t who_am_i,
                    uint8_t assembly_version,
                    uint8_t harp_version_major, uint8_t harp_version_minor,
                    uint8_t fw_version_major, uint8_t fw_version_minor,
-                   const char name[])
+                   uint16_t serial_number, const char name[])
 :regs_{who_am_i, hw_version_major, hw_version_minor,assembly_version,
        harp_version_major, harp_version_minor,
-       fw_version_major, fw_version_minor, name},
+       fw_version_major, fw_version_minor, serial_number, name},
  rx_buffer_index_{0}, total_bytes_read_{rx_buffer_index_}, new_msg_{false}
 {
     // Create a pointer to the first (and one-and-only) instance created.
