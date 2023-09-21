@@ -27,6 +27,8 @@ HarpCore& core = HarpCore::init(who_am_i, hw_version_major, hw_version_minor,
                                 fw_version_major, fw_version_minor,
                                 serial_number, "Pico Harp");
 
+// TODO: consider periodic ticking timers (2KHz)
+
 // Core0 main.
 int main()
 {

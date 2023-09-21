@@ -51,6 +51,7 @@ void HarpCore::run()
 void HarpCore::process_cdc_input()
 {
     // TODO: Consider a timeout if we never receive a fully formed message.
+    // TODO: scan for partial messages.
     // Fetch all data in the serial port. If it's at least a header's worth,
     // check the payload size and keep reading up to the end of the packet.
     if (not tud_cdc_available())
@@ -218,6 +219,7 @@ void HarpCore::write_to_read_only_reg_error(msg_t& msg)
 
 void HarpCore::update_timestamp_regs()
 {
+    // TODO: consider global interrupt lockout here.
     // PICO implementation:
     //  extract time data from pico timer which increments every 1[us].
     // Note that R_TIMESTAMP_MICRO can only represent values up to 31249.
