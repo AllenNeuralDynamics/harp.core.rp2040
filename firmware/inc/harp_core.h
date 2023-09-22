@@ -214,6 +214,7 @@ private:
  */
     RegFnPair reg_func_table_[CORE_REG_COUNT] =
     {
+        // { <read_fn_ptr>, <write_fn_prt>},
         {&HarpCore::read_reg_generic, &HarpCore::write_to_read_only_reg_error},
         {&HarpCore::read_reg_generic, &HarpCore::write_to_read_only_reg_error},
         {&HarpCore::read_reg_generic, &HarpCore::write_to_read_only_reg_error},

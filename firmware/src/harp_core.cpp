@@ -288,8 +288,15 @@ void HarpCore::write_operation_ctrl(msg_t& msg)
     // Send reply. If DUMP: reply is all registers serialized (little-endian).
     const RegSpecs& specs = regs_.enum_to_reg_specs[msg.header.address];
     const RegName& reg_name = (RegName)msg.header.address;
+    // DUMP-bit-specific behavior: dispatch one write reply per core register.
     if (DUMP)
-        send_harp_reply(WRITE, reg_name, (uint8_t*)&regs, sizeof(regs), U8);
+        for (size_t i = 0; i < CORE_REG_COUNT; ++i)
+        {
+            const reg_name& = RegName(i);
+            const RegSpecs& specs = regs_.enum_to_reg_specs[reg_name];
+            send_harp_reply(WRITE, reg_name, specs.base_ptr, specs.num_bytes,
+                            specs.payload_type);
+        }
     else
         send_harp_reply(WRITE, reg_name, specs.base_ptr, specs.num_bytes,
                         specs.payload_type);
