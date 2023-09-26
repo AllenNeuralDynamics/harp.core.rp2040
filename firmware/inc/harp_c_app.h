@@ -40,7 +40,8 @@ private:
              uint8_t fw_version_major, uint8_t fw_version_minor,
              uint16_t serial_number, const char name[],
              void* app_reg_values, RegSpecs* app_reg_specs,
-             RegFnPair* reg_fns, size_t app_reg_count);
+             RegFnPair* reg_fns, size_t app_reg_count,
+             void (* update_fn)(void));
 
     ~HarpCApp();
 
@@ -59,7 +60,8 @@ public:
                           uint8_t fw_version_major, uint8_t fw_version_minor,
                           uint16_t serial_number, const char name[],
                           void* app_reg_values, RegSpecs* app_reg_specs,
-                          RegFnPair* reg_fns, size_t app_reg_count);
+                          RegFnPair* reg_fns, size_t app_reg_count,
+                          void (* update_fn)(void));
 
     static inline HarpCApp* self = nullptr;
     static HarpCApp& instance() {return *self;}
@@ -98,6 +100,7 @@ private:
     RegSpecs* reg_specs_;
     RegFnPair* reg_fns_;
     size_t reg_count_;
+    void (* update_fn_)(void);
 };
 
 #endif //HARP_C_APP_H

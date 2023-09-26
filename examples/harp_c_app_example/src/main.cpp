@@ -41,6 +41,11 @@ RegFnPair reg_handler_fns[reg_count]
     {&HarpCApp::read_app_reg_generic, &HarpCApp::write_app_reg_generic}
 };
 
+void update_app_state()
+{
+    // update here! (Called inside run() function.)
+}
+
 // Create Harp App.
 HarpCApp& app = HarpCApp::init(who_am_i, hw_version_major, hw_version_minor,
                                assembly_version,
@@ -48,7 +53,7 @@ HarpCApp& app = HarpCApp::init(who_am_i, hw_version_major, hw_version_minor,
                                fw_version_major, fw_version_minor,
                                serial_number, "Example C App",
                                &app_regs, app_reg_specs,
-                               reg_handler_fns, reg_count);
+                               reg_handler_fns, reg_count, update_app_state);
 
 // Core0 main.
 int main()
