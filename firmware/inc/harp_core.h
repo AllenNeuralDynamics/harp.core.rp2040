@@ -57,7 +57,7 @@ public:
 
     // Convenience struct for aggregating an array of fn ptrs to handle each
     // register.
-    struct RegFnPair
+    struct RegMemberFnPair
     {
         RegReadMemberFn read_fn_ptr;
         RegWriteMemberFn write_fn_ptr;
@@ -212,7 +212,7 @@ private:
 /**
  * \brief Function Table. Order matters since we will index into it with enums.
  */
-    RegFnPair reg_func_table_[CORE_REG_COUNT] =
+    RegMemberFnPair reg_func_table_[CORE_REG_COUNT] =
     {
         // { <read_fn_ptr>, <write_fn_prt>},
         {&HarpCore::read_reg_generic, &HarpCore::write_to_read_only_reg_error},
