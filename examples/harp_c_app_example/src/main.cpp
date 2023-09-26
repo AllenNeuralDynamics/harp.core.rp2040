@@ -1,10 +1,9 @@
 #include <pico/stdlib.h>
 #include <cstring>
 #include <cstdio> // for printf
-#include <config.h>
-#include <harp_core.h>
+#include <harp_c_app.h>
 #include <harp_synchronizer.h>
-#include <registers.h>
+#include <core_registers.h>
 #include <reg_types.h>
 
 // Create device name array.
@@ -19,24 +18,27 @@ const uint8_t fw_version_minor = 0;
 const uint16_t serial_number = 0xCAFE;
 
 // Harp App Register Setup.
-const reg_count = 2;
+const size_t reg_count = 2;
 
+#pragma pack(push, 1)
 struct app_regs_t
 {
     volatile uint8_t test_byte;
     volatile uint32_t test_uint;
 } app_regs;
+#pragma pack(pop)
 
-RegSpecs app_reg_specs[]
+RegSpecs app_reg_specs[reg_count]
 {
-    {&app_registers.test_byte, sizeof(app_registers.test_byte), U8},
-    {&app_registers.test_uint, sizeof(app_registers.test_uint), U32}
+    {(uint8_t*)&app_regs.test_byte, sizeof(app_regs.test_byte), U8},
+    {(uint8_t*)&app_regs.test_uint, sizeof(app_regs.test_uint), U32}
 };
 
-RegFnPair reg_handler_fns[]
+
+RegFnPair reg_handler_fns[reg_count]
 {
-    {HarpCApp::read_reg_generic, HarpCApp::write_reg_generic},
-    {HarpCApp::read_reg_generic, HarpCApp::write_reg_generic}
+    {&HarpCApp::read_app_reg_generic, &HarpCApp::write_app_reg_generic},
+    {&HarpCApp::read_app_reg_generic, &HarpCApp::write_app_reg_generic}
 };
 
 // Create Harp App.
@@ -45,8 +47,8 @@ HarpCApp& app = HarpCApp::init(who_am_i, hw_version_major, hw_version_minor,
                                harp_version_major, harp_version_minor,
                                fw_version_major, fw_version_minor,
                                serial_number, "Example C App",
-                               &app_regs, &app_reg_specs,
-                               &reg_handler_fns, reg_count);
+                               &app_regs, app_reg_specs,
+                               reg_handler_fns, reg_count);
 
 // Core0 main.
 int main()

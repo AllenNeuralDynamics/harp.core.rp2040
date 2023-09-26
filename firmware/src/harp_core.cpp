@@ -292,7 +292,7 @@ void HarpCore::write_operation_ctrl(msg_t& msg)
     if (DUMP)
         for (size_t i = 0; i < CORE_REG_COUNT; ++i)
         {
-            const reg_name& = RegName(i);
+            const RegName& reg_name = RegName(i);
             const RegSpecs& specs = regs_.enum_to_reg_specs[reg_name];
             send_harp_reply(WRITE, reg_name, specs.base_ptr, specs.num_bytes,
                             specs.payload_type);

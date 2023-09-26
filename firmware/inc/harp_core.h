@@ -20,8 +20,8 @@
  */
 class HarpCore
 {
-// Make constructor private to prevent creating instances outside of init().
-private:
+// Make constructor protected to prevent creating instances outside of init().
+protected: // protected, but not private, to enable derived class usage.
     HarpCore(uint16_t who_am_i,
              uint8_t hw_version_major, uint8_t hw_version_minor,
              uint8_t assembly_version,
@@ -169,7 +169,6 @@ protected:
  */
     bool new_msg_;
 
-
 private:
     void update_timestamp_regs();  // call before reading timestamp register.
 
@@ -197,12 +196,15 @@ private:
 
 /**
  * \brief generic write a message payload to a register.
- * \note writing more data than the size of the register will sequentially
- *      write to the next register. In this way, you can write to multiple
- *      sequential registers starting from the msg.address.
+ * \note since the struct is byte-aligned, writing more data than the size of
+ *      the register will sequentially write to the next register. In this way,
+ *      you can write to multiple sequential registers starting from the
+ *      msg.address.
  */
     void write_reg_generic(msg_t& msg);
     void write_to_read_only_reg_error(msg_t& msg);
+
+
 
 /**
  *  \brief Struct of registers.
