@@ -34,11 +34,11 @@ RegSpecs app_reg_specs[reg_count]
     {(uint8_t*)&app_regs.test_uint, sizeof(app_regs.test_uint), U32}
 };
 
-
+//RegFnPair* reg_handler_fns;
 RegFnPair reg_handler_fns[reg_count]
 {
-    {&HarpCApp::read_app_reg_generic, &HarpCApp::write_app_reg_generic},
-    {&HarpCApp::read_app_reg_generic, &HarpCApp::write_app_reg_generic}
+    {&c_read_reg_generic, &c_write_reg_generic},
+    {&c_read_reg_generic, &c_write_reg_generic}
 };
 
 void update_app_state()

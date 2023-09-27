@@ -5,6 +5,8 @@
 #include <reg_types.h>
 //#include <harp_message.h>
 
+#define APP_REG_START_ADDRESS (32)
+
 /*
  * \brief Data structure for aggregating read/write function pointers.
  */
@@ -13,6 +15,12 @@ struct RegFnPair
     void (*read_fn_ptr)(uint8_t);  // reg name (enum)
     void (*write_fn_ptr)(msg_t&);
 };
+
+// C-style wrappers. FIXME: Shouldn't be necessary since we should be able to
+//  cast the static function into the right format to use it in the app reg
+//  function table directly.
+void c_read_reg_generic(uint8_t address);
+void c_write_reg_generic(msg_t& msg);
 
 /**
  * \brief Harp C-style App that handles core behaviors in addition t
@@ -66,34 +74,23 @@ public:
     static inline HarpCApp* self = nullptr;
     static HarpCApp& instance() {return *self;}
 
-/**
- * \brief Periodically handle tasks based on the current time, state,
- *      and inputs. Should be called in a loop.
- */
-    void run();
-
+private:
 /**
  * \brief entry point for handling incoming harp messages to core registers.
  *      Dispatches message to the appropriate handler.
  */
-    void handle_buffered_app_message();
+    void handle_buffered_app_msg();
 
 /**
- *
+ * \brief update app state. Update readable registers here.
  */
-    void update_state();
+    void update_app_state();
 
 /**
- *
+ * \brief used in Harp Core to extract specs for a particular register.
  */
-    static void read_app_reg_generic(uint8_t reg_name);
-
-/**
- *
- */
-    static void write_app_reg_generic(msg_t& msg);
-
-private:
+    const RegSpecs& address_to_app_reg_specs(uint8_t address)
+    {return reg_specs_[address - APP_REG_START_ADDRESS];}
 
 // Private Members
     void* reg_values_;

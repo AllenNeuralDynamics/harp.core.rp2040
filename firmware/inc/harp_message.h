@@ -21,7 +21,7 @@ struct msg_header_t
 {
     msg_type_t type;
     uint8_t raw_length;
-    uint8_t address; // should be a RegName?
+    uint8_t address;
     uint8_t port; // should default to 255.
     reg_type_t payload_type;
 

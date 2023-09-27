@@ -1,5 +1,15 @@
 #include <harp_c_app.h>
 
+void c_read_reg_generic(uint8_t address)
+{
+    HarpCApp::read_reg_generic(address);
+}
+
+void c_write_reg_generic(msg_t& msg)
+{
+    HarpCApp::write_reg_generic(msg);
+}
+
 HarpCApp& HarpCApp::init(uint16_t who_am_i,
                          uint8_t hw_version_major, uint8_t hw_version_minor,
                          uint8_t assembly_version,
@@ -45,27 +55,27 @@ HarpCApp::HarpCApp(uint16_t who_am_i,
 
 HarpCApp::~HarpCApp(){self = nullptr;}
 
-void HarpCApp::run()
+void HarpCApp::handle_buffered_app_msg()
 {
-    HarpCore::run();
-    // Handle in-range register msgs. Ignore msgs outside our range.
-    msg_header_t& header = get_buffered_msg_header();
-    if (header.address-32 < reg_count_) // FIXME: unhardcode 32.
-        handle_buffered_core_message();
+    msg_t msg = get_buffered_msg();
+    // Ignore out-of-range msgs.
+    if (msg.header.address < APP_REG_START_ADDRESS ||
+        msg.header.address >= APP_REG_START_ADDRESS + reg_count_)
+        return;
+    uint8_t app_reg_address = msg.header.address - APP_REG_START_ADDRESS;
+    switch (msg.header.type)
+    {
+        case READ:
+            reg_fns_[app_reg_address].read_fn_ptr(app_reg_address);
+            break;
+        case WRITE:
+            reg_fns_[app_reg_address].write_fn_ptr(msg);
+            break;
+    }
+    clear_msg();
 }
 
-void HarpCApp::update_state()
+void HarpCApp::update_app_state()
 {
-    HarpCore::update_state(); // update Harp Core state first.
     update_fn_();   // Update app state.
-}
-
-void HarpCApp::read_app_reg_generic(uint8_t reg_name)
-{
-
-}
-
-void HarpCApp::write_app_reg_generic(msg_t& msg)
-{
-
 }

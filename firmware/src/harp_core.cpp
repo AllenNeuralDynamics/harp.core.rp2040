@@ -39,13 +39,23 @@ void HarpCore::run()
 {
     tud_task();
     update_state();
+    update_app_state(); // Does nothing unless a derived class implements it.
     process_cdc_input();
     if (not new_msg_)
         return;
-    // Handle in-range register msgs. Ignore msgs outside our range.
-    msg_header_t& header = get_buffered_msg_header();
-    if (header.address < CORE_REG_COUNT)
-        handle_buffered_core_message();
+    // Handle in-range register msgs and clear them. Ignore out-of-range msgs.
+    handle_buffered_core_message(); // Handle message. Clear it if handled.
+    if (not new_msg_)
+        return;
+    handle_buffered_app_message(); // Handle msg. Clear it if handled.
+    // Always clear any unhandled messages, so we don't lock up.
+    if (new_msg_)
+    {
+#ifdef DEBUG
+    printf("Ignoring out-of-range msg!\r\n");
+#endif
+        clear_msg();
+    }
 }
 
 void HarpCore::process_cdc_input()
@@ -109,14 +119,17 @@ void HarpCore::handle_buffered_core_message()
             printf("%d, ", ((uint8_t*)(msg.payload))[i]);
         printf("\r\n\r\n");
 #endif
+    // Ignore out-of-range messages. Expect them to be handled by derived class.
+    if (msg.header.address > CORE_REG_COUNT)
+        return;
     // Handle read-or-write behavior.
     switch (msg.header.type)
     {
         case READ:
-            read_from_reg((RegName)msg.header.address);
+            reg_func_table_[msg.header.address].read_fn_ptr(msg.header.address);
             break;
         case WRITE:
-            write_to_reg(msg);
+            reg_func_table_[msg.header.address].write_fn_ptr(msg);
             break;
     }
     clear_msg();
@@ -144,9 +157,9 @@ void HarpCore::update_state()
     // Handle state LED.
 }
 
-void HarpCore::send_harp_reply(msg_type_t reply_type, RegName reg_name,
-                               const volatile uint8_t* data, uint8_t num_bytes,
-                               reg_type_t payload_type)
+void HarpCore::send_harp_reply(msg_type_t reply_type, uint8_t reg_name,
+                                      const volatile uint8_t* data, uint8_t num_bytes,
+                                      reg_type_t payload_type)
 {
     // FIXME: implementation as-is cannot send more than 64 bytes of data
     //  because of underlying usb implementation.
@@ -163,16 +176,16 @@ void HarpCore::send_harp_reply(msg_type_t reply_type, RegName reg_name,
         checksum += byte;
         tud_cdc_write_char(byte);
     }
-    update_timestamp_regs(); // update and push timestamp in required order.
-    for (uint8_t i = 0; i < sizeof(regs.R_TIMESTAMP_SECOND); ++i)
+    self->update_timestamp_regs(); // update and push timestamp in required order.
+    for (uint8_t i = 0; i < sizeof(self->regs.R_TIMESTAMP_SECOND); ++i)
     {
-        uint8_t& byte = *(((uint8_t*)(&regs.R_TIMESTAMP_SECOND)) + i);
+        uint8_t& byte = *(((uint8_t*)(&self->regs.R_TIMESTAMP_SECOND)) + i);
         checksum += byte;
         tud_cdc_write_char(byte);
     }
-    for (uint8_t i = 0; i < sizeof(regs.R_TIMESTAMP_MICRO); ++i)
+    for (uint8_t i = 0; i < sizeof(self->regs.R_TIMESTAMP_MICRO); ++i)
     {
-        uint8_t& byte = *(((uint8_t*)(&regs.R_TIMESTAMP_MICRO)) + i);
+        uint8_t& byte = *(((uint8_t*)(&self->regs.R_TIMESTAMP_MICRO)) + i);
         checksum += byte;
         tud_cdc_write_char(byte);
     }
@@ -188,19 +201,26 @@ void HarpCore::send_harp_reply(msg_type_t reply_type, RegName reg_name,
     tud_cdc_write_flush();  // Send usb packet, even if not full.
 }
 
-void HarpCore::read_reg_generic(RegName reg_name)
+const RegSpecs& HarpCore::reg_address_to_specs(uint8_t address)
 {
-    const RegSpecs& specs = regs_.enum_to_reg_specs[reg_name];
+    if (address < CORE_REG_COUNT)
+        return regs_.enum_to_reg_specs[address];
+    return address_to_app_reg_specs(address);
+}
+
+void HarpCore::read_reg_generic(uint8_t reg_name)
+{
+    const RegSpecs& specs = self->reg_address_to_specs(reg_name);
     send_harp_reply(READ, reg_name, specs.base_ptr, specs.num_bytes,
                     specs.payload_type);
 }
 
 void HarpCore::write_reg_generic(msg_t& msg)
 {
-    const RegSpecs& specs = regs_.enum_to_reg_specs[msg.header.address];
-    const RegName& reg_name = (RegName)msg.header.address;
+    const RegSpecs& specs = self->reg_address_to_specs(msg.header.address);
+    const uint8_t& reg_name = msg.header.address;
     memcpy((void*)specs.base_ptr, msg.payload, specs.num_bytes);
-    if (is_muted())
+    if (self->is_muted())
         return;
     send_harp_reply(WRITE, reg_name, specs.base_ptr, specs.num_bytes,
                     specs.payload_type);
@@ -211,8 +231,8 @@ void HarpCore::write_to_read_only_reg_error(msg_t& msg)
 #ifdef DEBUG
     printf("Error: Reg address %d is read-only.\r\n", msg.header.address);
 #endif
-    const RegSpecs& specs = regs_.enum_to_reg_specs[msg.header.address];
-    const RegName& reg_name = (RegName)msg.header.address;
+    const RegSpecs& specs = self->reg_address_to_specs(msg.header.address);
+    const uint8_t& reg_name = msg.header.address;
     send_harp_reply(WRITE_ERROR, reg_name, specs.base_ptr, specs.num_bytes,
                     specs.payload_type);
 }
@@ -229,9 +249,9 @@ void HarpCore::update_timestamp_regs()
     regs.R_TIMESTAMP_SECOND = time_us_64() / 1000000ULL;
 }
 
-void HarpCore::read_timestamp_second(RegName reg_name)
+void HarpCore::read_timestamp_second(uint8_t reg_name)
 {
-    update_timestamp_regs();
+    self->update_timestamp_regs();
     read_reg_generic(reg_name);
 }
 
@@ -249,16 +269,16 @@ void HarpCore::write_timestamp_second(msg_t& msg)
     timer_hw->timehw = (uint32_t)(new_time >> 32);
     // Send harp reply.
     // Note: harp timestamp registers will be updated before being dispatched.
-    const RegSpecs& specs = regs_.enum_to_reg_specs[msg.header.address];
-    const RegName& reg_name = (RegName)msg.header.address;
+    const RegSpecs& specs = self->regs_.enum_to_reg_specs[msg.header.address];
+    const uint8_t& reg_name = msg.header.address;
     send_harp_reply(WRITE, reg_name, specs.base_ptr, specs.num_bytes,
                     specs.payload_type);
 }
 
-void HarpCore::read_timestamp_microsecond(RegName reg_name)
+void HarpCore::read_timestamp_microsecond(uint8_t reg_name)
 {
     // Update register. Then trigger a generic register read.
-    update_timestamp_regs();
+    self->update_timestamp_regs();
     read_reg_generic(reg_name);
 }
 
@@ -269,8 +289,8 @@ void HarpCore::write_timestamp_microsecond(msg_t& msg)
     timer_hw->timelw = (time_us_32() & ~0x001FFFFF) +  microseconds;
     // Send harp reply.
     // Note: harp timestamp registers will be updated before being dispatched.
-    const RegSpecs& specs = regs_.enum_to_reg_specs[msg.header.address];
-    const RegName& reg_name = (RegName)msg.header.address;
+    const RegSpecs& specs = self->regs_.enum_to_reg_specs[msg.header.address];
+    const uint8_t& reg_name = msg.header.address;
     send_harp_reply(WRITE, reg_name, specs.base_ptr, specs.num_bytes,
                     specs.payload_type);
 }
@@ -279,22 +299,21 @@ void HarpCore::write_operation_ctrl(msg_t& msg)
 {
     uint8_t& write_byte = *((uint8_t*)msg.payload);
     // Update register state. Note: DUMP bit always reads as zero.
-    regs.R_OPERATION_CTRL = write_byte & ~(0x01 << DUMP_OFFSET);
+    self->regs.R_OPERATION_CTRL = write_byte & ~(0x01 << DUMP_OFFSET);
     // Bail early if we are muted.
-    if (is_muted())
+    if (self->is_muted())
         return;
     // Tease out flags.
     bool DUMP = bool((write_byte >> DUMP_OFFSET) & 0x01);
     // Send reply. If DUMP: reply is all registers serialized (little-endian).
-    const RegSpecs& specs = regs_.enum_to_reg_specs[msg.header.address];
-    const RegName& reg_name = (RegName)msg.header.address;
+    const RegSpecs& specs = self->regs_.enum_to_reg_specs[msg.header.address];
+    const uint8_t& reg_name = msg.header.address;
     // DUMP-bit-specific behavior: dispatch one write reply per core register.
     if (DUMP)
-        for (size_t i = 0; i < CORE_REG_COUNT; ++i)
+        for (uint8_t reg_address = 0; reg_address < CORE_REG_COUNT; ++reg_address)
         {
-            const RegName& reg_name = RegName(i);
-            const RegSpecs& specs = regs_.enum_to_reg_specs[reg_name];
-            send_harp_reply(WRITE, reg_name, specs.base_ptr, specs.num_bytes,
+            const RegSpecs& specs = self->regs_.enum_to_reg_specs[reg_address];
+            send_harp_reply(WRITE, reg_address, specs.base_ptr, specs.num_bytes,
                             specs.payload_type);
         }
     else
