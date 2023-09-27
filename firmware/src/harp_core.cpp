@@ -7,7 +7,6 @@ HarpCore& HarpCore::init(uint16_t who_am_i,
                          uint8_t fw_version_major, uint8_t fw_version_minor,
                          uint16_t serial_number, const char name[])
 {
-    tusb_init();
     // Create the singleton instance using the private constructor.
     static HarpCore core(who_am_i, hw_version_major, hw_version_minor,
                          assembly_version,
@@ -31,6 +30,7 @@ HarpCore::HarpCore(uint16_t who_am_i,
     // Create a pointer to the first (and one-and-only) instance created.
     if (self == nullptr)
         self = this;
+    tusb_init();
 }
 
 HarpCore::~HarpCore(){self = nullptr;}

@@ -1,10 +1,12 @@
-#include <pico/stdlib.h>
 #include <cstring>
-#include <cstdio> // for printf
 #include <harp_c_app.h>
 #include <harp_synchronizer.h>
 #include <core_registers.h>
 #include <reg_types.h>
+#ifdef DEBUG
+    #include <pico/stdlib.h> // for uart printing
+    #include <cstdio> // for printf
+#endif
 
 // Create device name array.
 const uint16_t who_am_i = 1234;
@@ -24,8 +26,8 @@ const size_t reg_count = 2;
 #pragma pack(push, 1)
 struct app_regs_t
 {
-    volatile uint8_t test_byte;
-    volatile uint32_t test_uint;
+    volatile uint8_t test_byte;  // app register 0
+    volatile uint32_t test_uint; // app register 1
 } app_regs;
 #pragma pack(pop)
 
@@ -61,9 +63,9 @@ HarpCApp& app = HarpCApp::init(who_am_i, hw_version_major, hw_version_minor,
 int main()
 {
 // Init Synchronizer.
-    HarpSynchronizer& sync = HarpSynchronizer::init(uart0, 17);
+    HarpSynchronizer& sync = HarpSynchronizer::init(uart1, 5);
 #ifdef DEBUG
-    stdio_uart_init_full(uart1, 921600, 4, -1); // use uart1 tx only.
+    stdio_uart_init_full(uart0, 921600, 0, -1); // use uart1 tx only.
     printf("Hello, from an RP2040!\r\n");
 #endif
     while(true)
