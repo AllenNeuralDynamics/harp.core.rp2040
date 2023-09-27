@@ -1,15 +1,5 @@
 #include <harp_c_app.h>
 
-void c_read_reg_generic(uint8_t address)
-{
-    HarpCApp::read_reg_generic(address);
-}
-
-void c_write_reg_generic(msg_t& msg)
-{
-    HarpCApp::write_reg_generic(msg);
-}
-
 HarpCApp& HarpCApp::init(uint16_t who_am_i,
                          uint8_t hw_version_major, uint8_t hw_version_minor,
                          uint8_t assembly_version,

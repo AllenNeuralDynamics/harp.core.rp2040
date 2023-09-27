@@ -7,21 +7,6 @@
 
 #define APP_REG_START_ADDRESS (32)
 
-/*
- * \brief Data structure for aggregating read/write function pointers.
- */
-struct RegFnPair
-{
-    void (*read_fn_ptr)(uint8_t);  // reg name (enum)
-    void (*write_fn_ptr)(msg_t&);
-};
-
-// C-style wrappers. FIXME: Shouldn't be necessary since we should be able to
-//  cast the static function into the right format to use it in the app reg
-//  function table directly.
-void c_read_reg_generic(uint8_t address);
-void c_write_reg_generic(msg_t& msg);
-
 /**
  * \brief Harp C-style App that handles core behaviors in addition t
 *       reads/writes to app-specific registers.

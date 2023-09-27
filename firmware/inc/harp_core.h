@@ -12,6 +12,18 @@
 #include <hardware/structs/timer.h>
 #include <hardware/timer.h>
 
+// Create a typedef to simplify syntax for array of static function ptrs.
+typedef void (*read_reg_fn)(uint8_t reg);
+typedef void (*write_reg_fn)(msg_t& msg);
+
+// Convenience struct for aggregating an array of fn ptrs to handle each
+// register.
+// TODO: this struct has the same contents as RegFnPair?? If so, consolidate.
+struct RegFnPair
+{
+    read_reg_fn read_fn_ptr;
+    write_reg_fn  write_fn_ptr;
+};
 
 /**
  * \brief Harp Core that handles management of common bank registers.
@@ -49,18 +61,6 @@ public:
     static inline HarpCore* self = nullptr;
     static HarpCore& instance() {return *self;}
 
-    // Create a typedef to simplify syntax for array of static function ptrs.
-    typedef void (*RegReadStaticFn)(uint8_t reg);
-    typedef void (*RegWriteStaticFn)(msg_t& msg);
-
-    // Convenience struct for aggregating an array of fn ptrs to handle each
-    // register.
-    // TODO: this struct has the same contents as RegFnPair?? If so, consolidate.
-    struct RegStaticFnPair
-    {
-        RegReadStaticFn read_fn_ptr;
-        RegWriteStaticFn write_fn_ptr;
-    };
 
 /**
  * \brief Periodically handle tasks based on the current time, state,
@@ -151,6 +151,12 @@ public:
  */
     static void read_reg_generic(uint8_t reg_name);
 
+/**
+ * \brief write handler function. Sends a harp reply indicating a write error
+ *      to the specified register.
+ */
+    static void write_to_read_only_reg_error(msg_t& msg);
+
 protected:
 /**
  * \brief entry point for handling incoming harp messages to core registers.
@@ -238,7 +244,6 @@ private:
     static void write_timestamp_offset(msg_t& msg);
     // See also write_reg_generic
 
-    static void write_to_read_only_reg_error(msg_t& msg);
 
 
 
@@ -250,7 +255,7 @@ private:
 /**
  * \brief Function Table. Order matters since we will index into it with enums.
  */
-    RegStaticFnPair reg_func_table_[CORE_REG_COUNT] =
+    RegFnPair reg_func_table_[CORE_REG_COUNT] =
     {
         // { <read_fn_ptr>, <write_fn_prt>},
         {&HarpCore::read_reg_generic, &HarpCore::write_to_read_only_reg_error},

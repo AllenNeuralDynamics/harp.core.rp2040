@@ -20,6 +20,7 @@ const uint16_t serial_number = 0xCAFE;
 // Harp App Register Setup.
 const size_t reg_count = 2;
 
+// Define register contents.
 #pragma pack(push, 1)
 struct app_regs_t
 {
@@ -28,17 +29,18 @@ struct app_regs_t
 } app_regs;
 #pragma pack(pop)
 
+// Define register "specs."
 RegSpecs app_reg_specs[reg_count]
 {
     {(uint8_t*)&app_regs.test_byte, sizeof(app_regs.test_byte), U8},
     {(uint8_t*)&app_regs.test_uint, sizeof(app_regs.test_uint), U32}
 };
 
-//RegFnPair* reg_handler_fns;
+// Define register read-and-write handler functions.
 RegFnPair reg_handler_fns[reg_count]
 {
-    {&c_read_reg_generic, &c_write_reg_generic},
-    {&c_read_reg_generic, &c_write_reg_generic}
+    {&HarpCore::read_reg_generic, &HarpCore::write_reg_generic},
+    {&HarpCore::read_reg_generic, &HarpCore::write_to_read_only_reg_error}
 };
 
 void update_app_state()
@@ -62,7 +64,7 @@ int main()
     HarpSynchronizer& sync = HarpSynchronizer::init(uart0, 17);
 #ifdef DEBUG
     stdio_uart_init_full(uart1, 921600, 4, -1); // use uart1 tx only.
-    printf("Hello, from a Pi Pico!\r\n");
+    printf("Hello, from an RP2040!\r\n");
 #endif
     while(true)
     {
