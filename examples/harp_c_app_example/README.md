@@ -1,5 +1,23 @@
 ## Setting up the Build Environment
-Recommended: Define the `PICO_SDK_PATH` environment variable to point to the location where the pico-sdk was downloaded. i.e:
+
+### Install Submodules
+This project uses the [Harp Core RP2040](https://github.com/AllenNeuralDynamics/harp.core.rp2040) library as a submodule.
+Install it with:
+````
+git submodule update --init --recursive
+````
+
+### Install Pico SDK
+This project uses the [Pico SDK](https://github.com/raspberrypi/pico-sdk/tree/master).
+The SDK needs to be downloaded and installed to a known folder on your PC.
+Note that the PICO SDK also contains submodules (including TinyUSB), so you must ensure that they are also fetched with:
+````
+git clone git clone git@github.com:raspberrypi/pico-sdk.git
+git submodule update --init
+````
+
+### Point to Pico SDK
+Recommended, but optional: define the `PICO_SDK_PATH` environment variable to point to the location where the pico-sdk was downloaded. i.e:
 ````
 PICO_SDK_PATH=/home/username/projects/pico-sdk
 ````
@@ -14,7 +32,7 @@ mkdir build
 cd build
 cmake ..
 ````
-If you did not define the `PICO_SDK_PATH` as an environment variable, you can pass it in here like so:
+If you did not define the `PICO_SDK_PATH` as an environment variable, you must pass it in here like so:
 ````
 mkdir build
 cd build
