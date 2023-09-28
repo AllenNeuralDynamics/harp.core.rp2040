@@ -14,6 +14,9 @@ static const uint8_t CORE_REG_COUNT = 16;
 #define OPLEDEN (6)
 #define ALIVE_EN (7)
 
+// RESET_DEF bitfields
+#define RST_DEF_OFFSET (0)
+
 /**
  * \brief enum for easier interpretation of the OP_MODE bitfield in the
  *  R_OPERATION_CTRL register.

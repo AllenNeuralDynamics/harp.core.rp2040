@@ -45,6 +45,12 @@ RegFnPair reg_handler_fns[reg_count]
     {&HarpCore::read_reg_generic, &HarpCore::write_to_read_only_reg_error}
 };
 
+void app_reset()
+{
+    app_regs.test_byte = 0;
+    app_regs.test_uint = 0;
+}
+
 void update_app_state()
 {
     // update here! (Called inside run() function.)
@@ -57,7 +63,8 @@ HarpCApp& app = HarpCApp::init(who_am_i, hw_version_major, hw_version_minor,
                                fw_version_major, fw_version_minor,
                                serial_number, "Example C App",
                                &app_regs, app_reg_specs,
-                               reg_handler_fns, reg_count, update_app_state);
+                               reg_handler_fns, reg_count, update_app_state,
+                               app_reset);
 
 // Core0 main.
 int main()

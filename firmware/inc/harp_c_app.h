@@ -3,7 +3,6 @@
 #include <harp_core.h>
 #include <core_registers.h>
 #include <reg_types.h>
-//#include <harp_message.h>
 
 #define APP_REG_START_ADDRESS (32)
 
@@ -34,7 +33,7 @@ private:
              uint16_t serial_number, const char name[],
              void* app_reg_values, RegSpecs* app_reg_specs,
              RegFnPair* reg_fns, size_t app_reg_count,
-             void (* update_fn)(void));
+             void (* update_fn)(void), void (* reset_fn)(void));
 
     ~HarpCApp();
 
@@ -54,7 +53,7 @@ public:
                           uint16_t serial_number, const char name[],
                           void* app_reg_values, RegSpecs* app_reg_specs,
                           RegFnPair* reg_fns, size_t app_reg_count,
-                          void (* update_fn)(void));
+                          void (* update_fn)(void), void (*reset_fn)(void));
 
     static inline HarpCApp* self = nullptr;
     static HarpCApp& instance() {return *self;}
@@ -67,9 +66,16 @@ private:
     void handle_buffered_app_msg();
 
 /**
- * \brief update app state. Update readable registers here.
+ * \brief update app state. Readable registers can be updated here.
+ *      Implements virtual member fn in base class of the same name.
  */
     void update_app_state();
+
+/**
+ * \brief Reset the app state.
+ *      Implements virtual member fn in base class of the same name.
+ */
+    void reset_app();
 
 /**
  * \brief used in Harp Core to extract specs for a particular register.
@@ -83,6 +89,7 @@ private:
     RegFnPair* reg_fns_;
     size_t reg_count_;
     void (* update_fn_)(void);
+    void (* reset_fn_)(void);
 };
 
 #endif //HARP_C_APP_H

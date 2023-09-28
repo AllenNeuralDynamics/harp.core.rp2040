@@ -323,8 +323,26 @@ void HarpCore::write_operation_ctrl(msg_t& msg)
 
 void HarpCore::write_reset_def(msg_t& msg)
 {
-    // TODO.
-    write_reg_generic(msg);
+    uint8_t& write_byte = *((uint8_t*)msg.payload);
+    // R_RESET_DEV Register state does not need to be updated since writing to
+    // it only triggers behavior.
+    // Tease out relevant flags.
+    const bool& rst_def_bit = bool((write_byte >> RST_DEF_OFFSET) & 1u);
+    const RegSpecs& specs = self->regs_.enum_to_reg_specs[msg.header.address];
+    const uint8_t& reg_name = msg.header.address;
+    // Issue a harp reply only if we aren't resetting.
+    // TODO: unclear if this is the appropriate behavior.
+    // Reset if specified to do so.
+    if (rst_def_bit)
+    {
+        // Reset core state machine and app.
+        self->regs_.r_operation_ctrl_bits.OP_MODE = STANDBY;
+        self->reset_app();
+    }
+    else
+        send_harp_reply(WRITE, reg_name, specs.base_ptr, specs.num_bytes,
+                        specs.payload_type);
+    // TODO: handle the other bit-specific operations.
 }
 
 void HarpCore::write_device_name(msg_t& msg)

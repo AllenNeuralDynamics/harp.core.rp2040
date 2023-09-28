@@ -177,6 +177,13 @@ protected:
  */
     virtual void update_app_state(){};
 
+/**
+ * \brief reset the app. Called when the writing to the RESET_DEF register.
+ *  Does nothing here, but not pure virtual since we need to be able to
+ * instantiate a standalone harp core.
+ */
+    virtual void reset_app(){};
+
 
     virtual const RegSpecs& address_to_app_reg_specs(uint8_t address)
     {return regs_.enum_to_reg_specs[0];} // should never happen.
