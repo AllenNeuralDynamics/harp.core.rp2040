@@ -151,6 +151,17 @@ public:
  */
     static void write_to_read_only_reg_error(msg_t& msg);
 
+/**
+ * \brief Send a Harp-compliant timestamped reply message.
+ * \warning does not check if we are currently busy sending a harp reply.
+ * \note made static such that we can write functions that invoke it before
+ *  instantiating the HarpCore singleton.
+ */
+    static void send_harp_reply(msg_type_t reply_type, uint8_t reg_name,
+                                const volatile uint8_t* data, uint8_t num_bytes,
+                                reg_type_t payload_type);
+
+
 protected:
 /**
  * \brief entry point for handling incoming harp messages to core registers.
@@ -194,16 +205,6 @@ protected:
 
     virtual const RegSpecs& address_to_app_reg_specs(uint8_t address)
     {return regs_.enum_to_reg_specs[0];} // should never happen.
-
-/**
- * \brief Send a Harp-compliant timestamped reply message.
- * \warning does not check if we are currently busy sending a harp reply.
- * \note made static such that we can write functions that invoke it before
- *  instantiating the HarpCore singleton.
- */
-    static void send_harp_reply(msg_type_t reply_type, uint8_t reg_name,
-                                const volatile uint8_t* data, uint8_t num_bytes,
-                                reg_type_t payload_type);
 
 /**
  * \brief true if the mute flag has been set in the R_OPERATION_CTRL register.
