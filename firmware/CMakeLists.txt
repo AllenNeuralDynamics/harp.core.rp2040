@@ -37,6 +37,10 @@ add_library(harp_sync
     src/harp_synchronizer.cpp
 )
 
+add_library(harp_c_app
+    src/harp_c_app.cpp
+)
+
 # Header file locations exposed with target scope for external projects.
 target_include_directories(core_registers PUBLIC inc)
 target_include_directories(usb_desc PUBLIC inc)
@@ -47,6 +51,7 @@ target_include_directories(harp_core PUBLIC inc)
 target_link_libraries(usb_desc tinyusb_device pico_unique_id)
 target_link_libraries(harp_sync pico_stdlib)
 target_link_libraries(harp_core core_registers pico_stdlib tinyusb_device usb_desc)
+target_link_libraries(harp_c_app harp_core)
 
 if(DEBUG)
     message(WARNING "Debug printf() messages from harp core to UART with baud \

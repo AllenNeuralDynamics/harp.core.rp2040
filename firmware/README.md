@@ -1,9 +1,6 @@
 ## Setting up the Build Environment
-This project uses the Raspberry Pi Pico SDK as a submodule (which itself contains submodules).
-Clone and setup all required submodules with:
-````
-git submodule update --init --recursive
-````
+This project should be submoduled into projects that used it.
+For the code to compile, the `PICO_SDK_PATH` must be defined.
 
 ## Compiling the Firmware
 

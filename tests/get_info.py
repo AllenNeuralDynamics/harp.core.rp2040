@@ -26,5 +26,8 @@ r_operation_ctrl = device.send(HarpMessage.ReadU8(Regs.OPERATION_CTRL).frame).pa
 r_operation_ctrl |= (1 << 3)  # Set the DUMP bit.
 reply = device.send(HarpMessage.WriteU8(Regs.OPERATION_CTRL, r_operation_ctrl).frame)
 print(reply.payload)
+# dump registers.
+print("Register dump:")
+print(device.dump_registers())
 # Close connection
 device.disconnect()
