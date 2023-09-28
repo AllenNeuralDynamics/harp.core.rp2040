@@ -75,3 +75,13 @@ void HarpCApp::reset_app()
 {
     reset_fn_();
 }
+
+void HarpCApp::dump_app_registers()
+{
+    for (uint8_t reg_address = 0; reg_address < reg_count_; ++reg_address)
+    {
+        const RegSpecs& specs = reg_specs_[reg_address];
+        send_harp_reply(READ, reg_address + APP_REG_START_ADDRESS,
+                        specs.base_ptr, specs.num_bytes, specs.payload_type);
+    }
+}

@@ -8,9 +8,9 @@
 
 /**
  * \brief Harp C-style App that handles core behaviors in addition t
-*       reads/writes to app-specific registers.
-*       Implemented as a singleton to simplify attaching interrupt callbacks
-*       (and since you can only have one per device).
+*   reads/writes to app-specific registers.
+*   Implemented as a singleton to simplify attaching interrupt callbacks
+*   (and since you can only have one per device).
  */
 class HarpCApp: public HarpCore
 {
@@ -61,21 +61,27 @@ public:
 private:
 /**
  * \brief entry point for handling incoming harp messages to core registers.
- *      Dispatches message to the appropriate handler.
+ *  Dispatches message to the appropriate handler.
  */
     void handle_buffered_app_msg();
 
 /**
  * \brief update app state. Readable registers can be updated here.
- *      Implements virtual member fn in base class of the same name.
+ *  Implements virtual member fn in base class of the same name.
  */
     void update_app_state();
 
 /**
  * \brief Reset the app state.
- *      Implements virtual member fn in base class of the same name.
+ *  Implements virtual member fn in base class of the same name.
  */
     void reset_app();
+
+/**
+ * \brief send one harp reply read message per app register.
+ *  Implements virtual member fn in base class of the same name.
+ */
+    void dump_app_registers();
 
 /**
  * \brief used in Harp Core to extract specs for a particular register.

@@ -171,7 +171,7 @@ protected:
     void update_state();
 
 /**
- * \brief update state of the derived class. Does nothing here,
+ * \brief update state of the derived class. Does nothing in the base class,
  *  but not pure virtual since we need to be able to instantiate a standalone
  *  harp core.
  */
@@ -179,11 +179,18 @@ protected:
 
 /**
  * \brief reset the app. Called when the writing to the RESET_DEF register.
- *  Does nothing here, but not pure virtual since we need to be able to
- * instantiate a standalone harp core.
+ *  Does nothing in the base class, but not pure virtual since we need to be
+ *  able to instantiate a standalone harp core.
  */
     virtual void reset_app(){};
 
+/**
+ * \brief send one harp reply read message per app register.
+ *  Called when the writing to the R_OPERATION_CTRL's DUMP bit.
+ *  Does nothing in the base class, but not pure virtual since we need to be
+ *  able to instantiate a standalone harp core.
+ */
+    virtual void dump_app_registers(){};
 
     virtual const RegSpecs& address_to_app_reg_specs(uint8_t address)
     {return regs_.enum_to_reg_specs[0];} // should never happen.

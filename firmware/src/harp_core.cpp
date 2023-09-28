@@ -308,14 +308,18 @@ void HarpCore::write_operation_ctrl(msg_t& msg)
     // Send reply. If DUMP: reply is all registers serialized (little-endian).
     const RegSpecs& specs = self->regs_.enum_to_reg_specs[msg.header.address];
     const uint8_t& reg_name = msg.header.address;
-    // DUMP-bit-specific behavior: dispatch one write reply per core register.
+    // DUMP-bit-specific behavior: dispatch one READ reply per register.
+    // Apps must do the same.
     if (DUMP)
+    {
         for (uint8_t reg_address = 0; reg_address < CORE_REG_COUNT; ++reg_address)
         {
             const RegSpecs& specs = self->regs_.enum_to_reg_specs[reg_address];
-            send_harp_reply(WRITE, reg_address, specs.base_ptr, specs.num_bytes,
+            send_harp_reply(READ, reg_address, specs.base_ptr, specs.num_bytes,
                             specs.payload_type);
         }
+        self->dump_app_registers();
+    }
     else
         send_harp_reply(WRITE, reg_name, specs.base_ptr, specs.num_bytes,
                         specs.payload_type);
