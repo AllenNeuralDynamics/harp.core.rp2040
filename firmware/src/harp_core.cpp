@@ -199,6 +199,10 @@ void HarpCore::send_harp_reply(msg_type_t reply_type, uint8_t reg_name,
     }
     tud_cdc_write_char(checksum); // push the checksum.
     tud_cdc_write_flush();  // Send usb packet, even if not full.
+    // Call tud_task to handle case we issue multiple harp replies in a row.
+    // FIXME: a better way might be to check tinyusb's internal buffer's
+    // remaining space.
+    tud_task();
 }
 
 const RegSpecs& HarpCore::reg_address_to_specs(uint8_t address)

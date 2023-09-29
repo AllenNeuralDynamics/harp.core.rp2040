@@ -21,11 +21,6 @@ if os.name == 'posix': # check for Linux.
 else: # assume Windows.
     device = Device("COM95", "ibl.bin")
 device.info()                           # Display device's info on screen
-print("Register dump:")
-r_operation_ctrl = device.send(HarpMessage.ReadU8(Regs.OPERATION_CTRL).frame).payload_as_int()
-r_operation_ctrl |= (1 << 3)  # Set the DUMP bit.
-reply = device.send(HarpMessage.WriteU8(Regs.OPERATION_CTRL, r_operation_ctrl).frame)
-print(reply.payload)
 # dump registers.
 print("Register dump:")
 print(device.dump_registers())
