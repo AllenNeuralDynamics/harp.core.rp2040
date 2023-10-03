@@ -26,7 +26,7 @@ struct RegFnPair
 /**
  * \brief Harp Core that handles management of common bank registers.
 *       Implemented as a singleton to simplify attaching interrupt callbacks
-*       (and since you can only have one per device.
+*       (and since you can only have one per device.)
  */
 class HarpCore
 {
@@ -58,8 +58,8 @@ public:
                           uint8_t fw_version_major, uint8_t fw_version_minor,
                           uint16_t serial_number, const char name[]);
 
-    static inline HarpCore* self = nullptr; ///< pointer to the singleton instance.
-    static HarpCore& instance() {return *self;}
+    static inline HarpCore* self = nullptr; // pointer to the singleton instance.
+    static HarpCore& instance() {return *self;} ///< returns the singleton.
 
 
 /**

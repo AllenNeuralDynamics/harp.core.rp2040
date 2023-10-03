@@ -53,8 +53,8 @@ public:
                           RegFnPair* reg_fns, size_t app_reg_count,
                           void (* update_fn)(void), void (*reset_fn)(void));
 
-    static inline HarpCApp* self = nullptr;
-    static HarpCApp& instance() {return *self;}
+    static inline HarpCApp* self = nullptr; // pointer to the singleton instance.
+    static HarpCApp& instance() {return *self;} ///< returns the singleton.
 
 private:
 /**
