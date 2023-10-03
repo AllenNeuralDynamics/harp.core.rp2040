@@ -89,6 +89,7 @@ void HarpSynchronizer::uart_rx_callback()
     #ifdef DEBUG
     printf("time is: %llu [us]\r\n", curr_us);
     #endif
+    // Time update does not take place until timehw is written to.
     timer_hw->timelw = (uint32_t)curr_us;
     timer_hw->timehw = (uint32_t)(curr_us >> 32);
     // Cleanup.

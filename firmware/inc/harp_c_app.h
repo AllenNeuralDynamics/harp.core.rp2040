@@ -4,8 +4,6 @@
 #include <core_registers.h>
 #include <reg_types.h>
 
-#define APP_REG_START_ADDRESS (32)
-
 /**
  * \brief Harp C-style App that handles core behaviors in addition t
 *   reads/writes to app-specific registers.
@@ -84,7 +82,10 @@ private:
     void dump_app_registers();
 
 /**
- * \brief used in Harp Core to extract specs for a particular register.
+ * \brief return app address's specs from the specified register address.
+ * \param address is the full address range where 0 is the first core register,
+ *  and APP_REG_START_ADDRESS is the first app register.
+ * \details used in Harp Core to extract specs for a particular app register.
  */
     const RegSpecs& address_to_app_reg_specs(uint8_t address)
     {return reg_specs_[address - APP_REG_START_ADDRESS];}

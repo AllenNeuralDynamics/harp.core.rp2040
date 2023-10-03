@@ -48,6 +48,8 @@ public:
 
 /**
  * \brief initialize the harp core singleton with parameters and init Tinyusb.
+ * \note default constructor, copy constructor, and assignment operator have
+ *  been disabled.
  */
     static HarpCore& init(uint16_t who_am_i,
                           uint8_t hw_version_major, uint8_t hw_version_minor,
@@ -56,49 +58,29 @@ public:
                           uint8_t fw_version_major, uint8_t fw_version_minor,
                           uint16_t serial_number, const char name[]);
 
-    static inline HarpCore* self = nullptr;
+    static inline HarpCore* self = nullptr; ///< pointer to the singleton instance.
     static HarpCore& instance() {return *self;}
 
 
 /**
  * \brief Periodically handle tasks based on the current time, state,
- *      and inputs. Should be called in a loop.
+ *      and inputs. Should be called in a loop. Calls tud_task() and
+ *      process_cdc_input().
  */
     void run();
 
 /**
- * \brief Read incoming bytes from the USB serial port. Does not block.
- *  \note If called again after returning true, the buffered message may be
- *      be overwritten.
- */
-    void process_cdc_input();
-
-/**
- * \brief return a reference to the message header in the rx_buffer.
- * \note this should only be accessed if `new_msg()` is true.
+ * \brief return a reference to the message header in the #rx_buffer_.
+ * \warning this should only be accessed if new_msg() is true.
  */
     msg_header_t& get_buffered_msg_header()
     {return *((msg_header_t*)(&rx_buffer_));}
 
 /**
- * \brief return a reference to the message in the rx_buffer. Inline.
- * \note this should only be accessed if `new_msg()` is true.
+ * \brief return a reference to the message in the #rx_buffer_. Inline.
+ * \warning this should only be accessed if new_msg() is true.
  */
     msg_t get_buffered_msg();
-
-/**
- * \brief Write register contents to the tx buffer by dispatching message
- *      to the appropriate handler. Inline.
- */
-//    void read_from_reg(uint8_t reg)
-//    {reg_func_table_[reg].read_fn_ptr(reg);}
-
-/**
- * \brief Write message contents to a register by dispatching message
- *      to the appropriate handler. Inline.
- */
-//    void write_to_reg(msg_t& msg)
-//    {reg_func_table_[msg.header.address].write_fn_ptr(msg);}
 
 /**
  * \brief reference to the struct of reg values for easy access.
@@ -106,13 +88,7 @@ public:
     RegValues& regs = regs_.regs_;
 
 /**
- * \brief the total number of bytes read into the the msg receive buffer.
- *  This is implemented as a read-only reference to the rx_buffer_index_.
- */
-    const uint8_t& total_bytes_read_;
-
-/**
- * \brief flag indicating whether or not a new message is in the rx_buffer_.
+ * \brief flag indicating whether or not a new message is in the #rx_buffer_.
  */
     bool new_msg()
     {return new_msg_;}
@@ -126,7 +102,7 @@ public:
 
 /**
  * \brief generic handler function to write a message payload to a core or
- *      app register and issue a harp reply (unless muted).
+ *      app register and issue a harp reply (unless is_muted()).
  * \note this function may be used in cases where no actions must trigger from
         writing to this register.
  * \note since the struct is byte-aligned, writing more data than the size of
@@ -139,7 +115,7 @@ public:
 
 /**
  * \brief generic handler function to read a message payload to a core or
- *      app register and issue a harp reply (unless muted).
+ *      app register and issue a harp reply (unless is_muted()).
  * \note this function may be used in cases where (1) the register value is
  *      up-to-date and (2) no actions must trigger from reading this register.
  */
@@ -152,10 +128,27 @@ public:
     static void write_to_read_only_reg_error(msg_t& msg);
 
 /**
- * \brief Send a Harp-compliant timestamped reply message.
- * \warning does not check if we are currently busy sending a harp reply.
- * \note made static such that we can write functions that invoke it before
- *  instantiating the HarpCore singleton.
+ * \brief Send a Harp-compliant timestamped reply message for the specified
+ *  core or app register.
+ * \details this function will lookup the particular core-or-app register's
+ *  specs for the provided address and construct a reply based on those specs.
+ * \note this function is static such that we can write functions that invoke it
+ *  before instantiating the HarpCore singleton.
+ * \note Calls tud_task().
+ */
+    static inline void send_harp_reply(msg_type_t reply_type, uint8_t reg_name)
+    {
+        const RegSpecs& specs = self->reg_address_to_specs(reg_name);
+        send_harp_reply(READ, reg_name, specs.base_ptr, specs.num_bytes,
+                        specs.payload_type);
+    }
+
+/**
+ * \brief Construct and send a Harp-compliant timestamped reply message from
+ *  provided arguments.
+ * \note this function is static such that we can write functions that invoke it
+ *  before instantiating the HarpCore singleton.
+ * \note Calls tud_task().
  */
     static void send_harp_reply(msg_type_t reply_type, uint8_t reg_name,
                                 const volatile uint8_t* data, uint8_t num_bytes,
@@ -204,7 +197,7 @@ protected:
     virtual void dump_app_registers(){};
 
     virtual const RegSpecs& address_to_app_reg_specs(uint8_t address)
-    {return regs_.enum_to_reg_specs[0];} // should never happen.
+    {return regs_.address_to_specs[0];} // should never happen.
 
 /**
  * \brief true if the mute flag has been set in the R_OPERATION_CTRL register.
@@ -216,33 +209,59 @@ protected:
     {return (regs.R_OPERATION_CTRL & 0x03) == ACTIVE;}
 
 /**
- * \brief data is read from serial port into the the rx_buffer.
- */
-    uint8_t rx_buffer_[MAX_PACKET_SIZE];
-    uint8_t rx_buffer_index_;
-/**
  * \brief flag indicating whether or not a new message is in the rx_buffer_.
  */
     bool new_msg_;
 
 private:
-    void update_timestamp_regs();  // call before reading timestamp register.
+/**
+ * \brief the total number of bytes read into the the msg receive buffer.
+ *  This is implemented as a read-only reference to the #rx_buffer_index_.
+ */
+    const uint8_t& total_bytes_read_;
 
+/**
+ * \brief buffer to contain data read from the serial port.
+ */
+    uint8_t rx_buffer_[MAX_PACKET_SIZE];
+
+/**
+ * \brief #rx_buffer_ index where the next incoming byte will be written.
+ */
+    uint8_t rx_buffer_index_;
+
+/**
+ * \brief Read incoming bytes from the USB serial port. Does not block.
+ *  \warning If called again before handling previous message in the buffer, the
+ *      buffered message may be be overwritten if a new message has arrived.
+ */
+    void process_cdc_input();
+
+/**
+ * \brief move the current CPU time to the timestamp registers.
+ * \warning must be called before timestamp registers are read.
+ */
+    void update_timestamp_regs();
+
+/**
+ * \brief return a reference to the specified core or app register's specs used
+ *  for issuing a harp reply for that register.
+ * \details address	is the full address range where 0 is the first core
+ *  register, and APP_REG_START_ADDRESS is the first app register.
+ */
     const RegSpecs& reg_address_to_specs(uint8_t address);
 
-/**
- * \brief read handler functions. One-per-harp-register where necessary,
- *      but the generic one can be used in most cases.
- *      Note: these all need to have the same function signature.
- */
+    // core register read handler functions. Handles read operations on those
+    // registers. One-per-harp-register where necessary, but read_reg_generic()
+    // can be used in most cases.
+    // Note: these all need to have the same function signature.
     static void read_timestamp_second(uint8_t reg_name);
     static void read_timestamp_microsecond(uint8_t reg_name);
-    // See also read_reg_generic
 
-/**
- * \brief a write handler function per harp register. Handles write
- *      operations to that register.
- */
+
+    // write handler function per core register. Handles write
+    // operations to that register.
+    // Note: these all need to have the same function signature.
     static void write_timestamp_second(msg_t& msg);
     static void write_timestamp_microsecond(msg_t& msg);
     static void write_operation_ctrl(msg_t& msg);
@@ -251,18 +270,12 @@ private:
     static void write_serial_number(msg_t& msg);
     static void write_clock_config(msg_t& msg);
     static void write_timestamp_offset(msg_t& msg);
-    // See also write_reg_generic
 
-
-
+    Registers regs_; ///< struct of Harp core registers
 
 /**
- *  \brief Struct of registers.
- */
-    Registers regs_;
-
-/**
- * \brief Function Table. Order matters since we will index into it with enums.
+ * \brief Function table containing the read/write handler functions, one pair
+ *  per core register. Index is the register address.
  */
     RegFnPair reg_func_table_[CORE_REG_COUNT] =
     {

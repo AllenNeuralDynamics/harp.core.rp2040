@@ -10,7 +10,7 @@ from time import sleep, perf_counter
 from matplotlib import pyplot as plt
 
 
-ROUND_TRIPS = 50000
+ROUND_TRIPS = 30000
 
 
 # Open the device and print the info on screen

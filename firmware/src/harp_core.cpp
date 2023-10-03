@@ -43,6 +43,24 @@ void HarpCore::run()
     process_cdc_input();
     if (not new_msg_)
         return;
+#ifdef DEBUG
+    msg_t msg = get_buffered_msg();
+    printf("Msg data: \r\n");
+    printf("  type: %d\r\n", msg.header.type);
+    printf("  addr: %d\r\n", msg.header.address);
+    printf("  raw len: %d\r\n", msg.header.raw_length);
+    printf("  port: %d\r\n", msg.header.port);
+    printf("  payload type: %d\r\n", msg.header.payload_type);
+    printf("  payload len: %d\r\n", msg.header.payload_length());
+    uint8_t payload_len = msg.header.payload_length();
+    if (payload_len > 0)
+    {
+        printf("  payload: ");
+        for (auto i = 0; i < msg.payload_length(); ++i)
+            printf("%d, ", ((uint8_t*)(msg.payload))[i]);
+    }
+    printf("\r\n\r\n");
+#endif
     // Handle in-range register msgs and clear them. Ignore out-of-range msgs.
     handle_buffered_core_message(); // Handle message. Clear it if handled.
     if (not new_msg_)
@@ -107,18 +125,6 @@ void HarpCore::handle_buffered_core_message()
     msg_t msg = get_buffered_msg();
     // TODO: check checksum.
     // Note: PC-to-Harp msgs don't have timestamps, so we don't check for them.
-#ifdef DEBUG
-        printf("Msg data: \r\n");
-        printf("  type: %d\r\n", msg.header.type);
-        printf("  raw length: %d\r\n", msg.header.raw_length);
-        printf("  address: %d\r\n", msg.header.address);
-        printf("  port: %d\r\n", msg.header.port);
-        printf("  payload type: %d\r\n", msg.header.payload_type);
-        printf("  payload: ");
-        for (auto i = 0; i < msg.payload_length(); ++i)
-            printf("%d, ", ((uint8_t*)(msg.payload))[i]);
-        printf("\r\n\r\n");
-#endif
     // Ignore out-of-range messages. Expect them to be handled by derived class.
     if (msg.header.address > CORE_REG_COUNT)
         return;
@@ -157,9 +163,16 @@ void HarpCore::update_state()
     // Handle state LED.
 }
 
+const RegSpecs& HarpCore::reg_address_to_specs(uint8_t address)
+{
+    if (address < CORE_REG_COUNT)
+        return regs_.address_to_specs[address];
+    return address_to_app_reg_specs(address); // virtual. Implemented by app.
+}
+
 void HarpCore::send_harp_reply(msg_type_t reply_type, uint8_t reg_name,
-                                      const volatile uint8_t* data, uint8_t num_bytes,
-                                      reg_type_t payload_type)
+                               const volatile uint8_t* data, uint8_t num_bytes,
+                               reg_type_t payload_type)
 {
     // FIXME: implementation as-is cannot send more than 64 bytes of data
     //  because of underlying usb implementation.
@@ -205,18 +218,9 @@ void HarpCore::send_harp_reply(msg_type_t reply_type, uint8_t reg_name,
     tud_task();
 }
 
-const RegSpecs& HarpCore::reg_address_to_specs(uint8_t address)
-{
-    if (address < CORE_REG_COUNT)
-        return regs_.enum_to_reg_specs[address];
-    return address_to_app_reg_specs(address);
-}
-
 void HarpCore::read_reg_generic(uint8_t reg_name)
 {
-    const RegSpecs& specs = self->reg_address_to_specs(reg_name);
-    send_harp_reply(READ, reg_name, specs.base_ptr, specs.num_bytes,
-                    specs.payload_type);
+    send_harp_reply(READ, reg_name);
 }
 
 void HarpCore::write_reg_generic(msg_t& msg)
@@ -235,21 +239,19 @@ void HarpCore::write_to_read_only_reg_error(msg_t& msg)
 #ifdef DEBUG
     printf("Error: Reg address %d is read-only.\r\n", msg.header.address);
 #endif
-    const RegSpecs& specs = self->reg_address_to_specs(msg.header.address);
-    const uint8_t& reg_name = msg.header.address;
-    send_harp_reply(WRITE_ERROR, reg_name, specs.base_ptr, specs.num_bytes,
-                    specs.payload_type);
+    send_harp_reply(WRITE_ERROR, msg.header.address);
 }
 
 void HarpCore::update_timestamp_regs()
 {
-    // TODO: consider global interrupt lockout here.
     // PICO implementation:
     //  extract time data from pico timer which increments every 1[us].
     // Note that R_TIMESTAMP_MICRO can only represent values up to 31249.
     // Update microseconds first.
-    //regs.R_TIMESTAMP_MICRO = uint16_t(time_us_32() >> 5)%31250;
-    regs.R_TIMESTAMP_MICRO = uint16_t((time_us_32()%1000000U)>>5);
+    uint64_t curr_total_us = time_us_64();
+    uint32_t curr_total_us_32 = (uint32_t)curr_total_us; // truncate.
+    // TODO: use divmod_u64u64_rem to do division with remainder once.
+    regs.R_TIMESTAMP_MICRO = uint16_t((curr_total_us_32%1000000UL)>>5);
     regs.R_TIMESTAMP_SECOND = time_us_64() / 1000000ULL;
 }
 
@@ -264,19 +266,17 @@ void HarpCore::write_timestamp_second(msg_t& msg)
     const uint32_t& seconds = *((uint32_t*)msg.payload);
     // PICO implementation: replace the current number of elapsed seconds
     // without altering the number of elapsed microseconds.
+    // TODO: use divmod_u64u64_rem to do division with remainder once.
     uint64_t set_time_microseconds = uint64_t(seconds) * 1000000UL;
     uint32_t current_microseconds = time_us_64() % 1000000ULL;
     uint64_t new_time = set_time_microseconds + current_microseconds;
     // Set the low and high time registers with the desired seconds.
-    // Update low register first.
+    // Time does not update until timehw is written to.
     timer_hw->timelw = (uint32_t)new_time;  // Truncate.
     timer_hw->timehw = (uint32_t)(new_time >> 32);
     // Send harp reply.
     // Note: harp timestamp registers will be updated before being dispatched.
-    const RegSpecs& specs = self->regs_.enum_to_reg_specs[msg.header.address];
-    const uint8_t& reg_name = msg.header.address;
-    send_harp_reply(WRITE, reg_name, specs.base_ptr, specs.num_bytes,
-                    specs.payload_type);
+    send_harp_reply(WRITE, msg.header.address);
 }
 
 void HarpCore::read_timestamp_microsecond(uint8_t reg_name)
@@ -288,15 +288,17 @@ void HarpCore::read_timestamp_microsecond(uint8_t reg_name)
 
 void HarpCore::write_timestamp_microsecond(msg_t& msg)
 {
-    const uint32_t microseconds = ((uint32_t)(*((uint16_t*)msg.payload))) << 5;
-    // PICO implementation: replace the current number of elapsed microseconds.
-    timer_hw->timelw = (time_us_32() & ~0x001FFFFF) +  microseconds;
+    const uint32_t msg_us = ((uint32_t)(*((uint16_t*)msg.payload))) << 5;
+    // PICO implementation: replace the current number of elapsed microseconds
+    // with the value received from the message.
+    // timelw and timehw need to be written to such that the update takes place.
+    uint64_t curr_total_s = time_us_64() / 1000000ULL; // integer division.
+    uint64_t new_time = curr_total_s + msg_us;
+    timer_hw->timelw = (uint32_t)new_time;
+    timer_hw->timehw = (uint32_t)(new_time >> 32);
     // Send harp reply.
-    // Note: harp timestamp registers will be updated before being dispatched.
-    const RegSpecs& specs = self->regs_.enum_to_reg_specs[msg.header.address];
-    const uint8_t& reg_name = msg.header.address;
-    send_harp_reply(WRITE, reg_name, specs.base_ptr, specs.num_bytes,
-                    specs.payload_type);
+    // Note: Harp timestamp registers will be updated before dispatching reply.
+    send_harp_reply(WRITE, msg.header.address);
 }
 
 void HarpCore::write_operation_ctrl(msg_t& msg)
@@ -310,19 +312,14 @@ void HarpCore::write_operation_ctrl(msg_t& msg)
     // Tease out flags.
     bool DUMP = bool((write_byte >> DUMP_OFFSET) & 0x01);
     // Send WRITE reply.
-    const RegSpecs& specs = self->regs_.enum_to_reg_specs[msg.header.address];
-    const uint8_t& reg_name = msg.header.address;
-    send_harp_reply(WRITE, reg_name, specs.base_ptr, specs.num_bytes,
-                    specs.payload_type);
+    send_harp_reply(WRITE, msg.header.address);
     // DUMP-bit-specific behavior: if set, dispatch one READ reply per register.
     // Apps must also dump their registers.
     if (DUMP)
     {
-        for (uint8_t reg_address = 0; reg_address < CORE_REG_COUNT; ++reg_address)
+        for (uint8_t address = 0; address < CORE_REG_COUNT; ++address)
         {
-            const RegSpecs& specs = self->regs_.enum_to_reg_specs[reg_address];
-            send_harp_reply(READ, reg_address, specs.base_ptr, specs.num_bytes,
-                            specs.payload_type);
+            send_harp_reply(WRITE, address);
         }
         self->dump_app_registers();
     }
@@ -335,8 +332,6 @@ void HarpCore::write_reset_def(msg_t& msg)
     // it only triggers behavior.
     // Tease out relevant flags.
     const bool& rst_def_bit = bool((write_byte >> RST_DEF_OFFSET) & 1u);
-    const RegSpecs& specs = self->regs_.enum_to_reg_specs[msg.header.address];
-    const uint8_t& reg_name = msg.header.address;
     // Issue a harp reply only if we aren't resetting.
     // TODO: unclear if this is the appropriate behavior.
     // Reset if specified to do so.
@@ -347,8 +342,7 @@ void HarpCore::write_reset_def(msg_t& msg)
         self->reset_app();
     }
     else
-        send_harp_reply(WRITE, reg_name, specs.base_ptr, specs.num_bytes,
-                        specs.payload_type);
+        send_harp_reply(WRITE, msg.header.address);
     // TODO: handle the other bit-specific operations.
 }
 
