@@ -53,7 +53,10 @@ void app_reset()
 
 void update_app_state()
 {
-    // update here! (Called inside run() function.)
+    // update here!
+    // If app registers update their states outside the read/write handler
+    // functions, update them here.
+    // (Called inside run() function.)
 }
 
 // Create Harp App.
