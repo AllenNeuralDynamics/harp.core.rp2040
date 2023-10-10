@@ -62,7 +62,7 @@ void HarpCore::run()
     printf("\r\n\r\n");
 #endif
     // Handle in-range register msgs and clear them. Ignore out-of-range msgs.
-    handle_buffered_core_message(); // Handle message. Clear it if handled.
+    handle_buffered_core_message(); // Handle msg. Clear it if handled.
     if (not new_msg_)
         return;
     handle_buffered_app_message(); // Handle msg. Clear it if handled.

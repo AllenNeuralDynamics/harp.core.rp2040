@@ -61,7 +61,7 @@ private:
  * \brief entry point for handling incoming harp messages to core registers.
  *  Dispatches message to the appropriate handler.
  */
-    void handle_buffered_app_msg();
+    void handle_buffered_app_message();
 
 /**
  * \brief update app state. Readable registers can be updated here.
