@@ -12,7 +12,7 @@ This project uses the [Pico SDK](https://github.com/raspberrypi/pico-sdk/tree/ma
 The SDK needs to be downloaded and installed to a known folder on your PC.
 Note that the PICO SDK also contains submodules (including TinyUSB), so you must ensure that they are also fetched with:
 ````
-git clone git clone git@github.com:raspberrypi/pico-sdk.git
+git clone git@github.com:raspberrypi/pico-sdk.git
 git submodule update --init
 ````
 
