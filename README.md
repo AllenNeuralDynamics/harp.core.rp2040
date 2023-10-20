@@ -2,12 +2,11 @@
 
 An RP2040 Harp Core that implements the [Harp Protocol](https://github.com/harp-tech/protocol) to serve as the basis of a custom Harp device.
 
-
-## Overview
-
-TODO
-
-## Usage
+## Features
+* Synchronization to an external Harp Clock Synchronizer signal.
+* Parsing incoming harp messages
+* Dispatching messages to the appropriate register
+* Sending harp-compliant timestamped replies
 
 ## Examples
 See the examples folder to get a feel for incorporating the harp core into your own project.
