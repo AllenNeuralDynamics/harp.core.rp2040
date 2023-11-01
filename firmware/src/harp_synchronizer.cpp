@@ -84,7 +84,8 @@ void HarpSynchronizer::uart_rx_callback()
     }
     // Apply new timestamp data.
     // Interpret 4-byte sequence as a little-endian uint32_t.
-    uint32_t sec = *((uint32_t*)(self->sync_data_));
+    // Add 1[s] per protocol spec since 4-byte sequence encodes previous second.
+    uint32_t sec = *((uint32_t*)(self->sync_data_)) + 1;
     uint64_t curr_us = uint64_t(sec) * 1000000 - HARP_SYNC_OFFSET_US;
     #ifdef DEBUG
     printf("time is: %llu [us]\r\n", curr_us);
