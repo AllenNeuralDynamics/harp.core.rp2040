@@ -139,7 +139,7 @@ public:
     static inline void send_harp_reply(msg_type_t reply_type, uint8_t reg_name)
     {
         const RegSpecs& specs = self->reg_address_to_specs(reg_name);
-        send_harp_reply(READ, reg_name, specs.base_ptr, specs.num_bytes,
+        send_harp_reply(reply_type, reg_name, specs.base_ptr, specs.num_bytes,
                         specs.payload_type);
     }
 

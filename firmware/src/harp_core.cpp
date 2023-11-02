@@ -182,6 +182,23 @@ void HarpCore::send_harp_reply(msg_type_t reply_type, uint8_t reg_name,
     uint8_t checksum = 0;
     msg_header_t header{reply_type, raw_length, reg_name, 255,
                         (reg_type_t)(HAS_TIMESTAMP | payload_type)};
+#ifdef DEBUG
+    printf("Sending msg: \r\n");
+    printf("  type: %d\r\n", header.type);
+    printf("  addr: %d\r\n", header.address);
+    printf("  raw len: %d\r\n", header.raw_length);
+    printf("  port: %d\r\n", header.port);
+    printf("  payload type: %d\r\n", header.payload_type);
+    printf("  payload len: %d\r\n", header.payload_length());
+    uint8_t payload_len = header.payload_length();
+    if (payload_len > 0)
+    {
+        printf("  payload: ");
+        for (auto i = 0; i < header.payload_length(); ++i)
+            printf("%d, ", data[i]);
+    }
+    printf("\r\n\r\n");
+#endif
     // Push data into usb packet and send it.
     for (uint8_t i = 0; i < sizeof(header); ++i) // push the header.
     {
@@ -319,7 +336,7 @@ void HarpCore::write_operation_ctrl(msg_t& msg)
     {
         for (uint8_t address = 0; address < CORE_REG_COUNT; ++address)
         {
-            send_harp_reply(WRITE, address);
+            send_harp_reply(READ, address);
         }
         self->dump_app_registers();
     }

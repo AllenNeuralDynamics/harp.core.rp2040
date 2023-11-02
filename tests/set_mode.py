@@ -19,11 +19,15 @@ else: # assume Windows.
 
 for i in range(2):
     print("Setting device mode to Active.")
-    device.set_mode(DeviceMode.Active)
+    reply = device.set_mode(DeviceMode.Active)
+    print("reply to set mode is: ")
+    print(reply)
     print(f"Device mode is now: {device.read_device_mode()}")
 
     print("Setting device mode to Standby.")
-    device.set_mode(DeviceMode.Standby)
+    reply = device.set_mode(DeviceMode.Standby)
+    print("reply to set mode is: ")
+    print(reply)
     print(f"Device mode is now: {device.read_device_mode()}")
 
     print()
