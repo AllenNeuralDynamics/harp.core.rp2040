@@ -43,7 +43,7 @@ void HarpCore::run()
     process_cdc_input();
     if (not new_msg_)
         return;
-#ifdef DEBUG
+#ifdef DEBUG_HARP_MSG_IN
     msg_t msg = get_buffered_msg();
     printf("Msg data: \r\n");
     printf("  type: %d\r\n", msg.header.type);
@@ -69,7 +69,7 @@ void HarpCore::run()
     // Always clear any unhandled messages, so we don't lock up.
     if (new_msg_)
     {
-#ifdef DEBUG
+#ifdef DEBUG_HARP_MSG_IN
     printf("Ignoring out-of-range msg!\r\n");
 #endif
         clear_msg();
@@ -182,7 +182,7 @@ void HarpCore::send_harp_reply(msg_type_t reply_type, uint8_t reg_name,
     uint8_t checksum = 0;
     msg_header_t header{reply_type, raw_length, reg_name, 255,
                         (reg_type_t)(HAS_TIMESTAMP | payload_type)};
-#ifdef DEBUG
+#ifdef DEBUG_HARP_MSG_OUT
     printf("Sending msg: \r\n");
     printf("  type: %d\r\n", header.type);
     printf("  addr: %d\r\n", header.address);
@@ -253,7 +253,7 @@ void HarpCore::write_reg_generic(msg_t& msg)
 
 void HarpCore::write_to_read_only_reg_error(msg_t& msg)
 {
-#ifdef DEBUG
+#ifdef DEBUG_HARP_MSG_IN
     printf("Error: Reg address %d is read-only.\r\n", msg.header.address);
 #endif
     send_harp_reply(WRITE_ERROR, msg.header.address);

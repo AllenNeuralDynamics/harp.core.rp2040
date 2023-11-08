@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.13)
 
-# Set to 1 to debug the harp core.
-set(DEBUG 0)
+#uncomment to print incoming and outgoing harp message stats.
+#add_definitions(-DDEBUG_HARP_MSG_IN)
+#add_definitions(-DDEBUG_HARP_MSG_OUT)
 
 if(NOT DEFINED PICO_SDK_PATH)
     message(FATAL_ERROR
@@ -9,11 +10,8 @@ if(NOT DEFINED PICO_SDK_PATH)
              pico_sdk_init() must first be invoked.")
 endif()
 
-if (DEBUG)
-    add_definitions(-DDEBUG)
-endif()
-
-#option(DEBUG "If true, compile with added debug statements output to 
+# commented out for now. Unclear how to use this with the GUI.
+#option(DEBUG "If true, compile with added debug statements output to
 #              uart at 921600 baud" OFF)
 
 project(harp_core_rp2040)
