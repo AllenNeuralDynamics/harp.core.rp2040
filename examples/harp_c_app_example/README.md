@@ -1,11 +1,6 @@
-## Setting up the Build Environment
+# Compiling and Flashing this Example
 
-### Install Submodules
-This project uses the [Harp Core RP2040](https://github.com/AllenNeuralDynamics/harp.core.rp2040) library as a submodule.
-Install it with:
-````
-git submodule update --init --recursive
-````
+## Setting up the Build Environment
 
 ### Install Pico SDK
 This project uses the [Pico SDK](https://github.com/raspberrypi/pico-sdk/tree/master).
