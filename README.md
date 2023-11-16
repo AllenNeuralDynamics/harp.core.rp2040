@@ -9,9 +9,9 @@ An RP2040 Harp Core that implements the [Harp Protocol](https://github.com/harp-
 * Sending harp-compliant timestamped replies
 
 ## Examples
-See the examples folder to get a feel for incorporating the harp core into your own project.
+See the [examples](./examples) folder to get a feel for incorporating the harp core into your own project.
 
-Here are a few examples that use the RP2040 Harp Core in the wild:
+Additionally, are a few examples that use the RP2040 Harp Core in the wild:
 * [harp.device.environment-sensor](https://github.com/AllenNeuralDynamics/harp.device.environment_sensor)
 * [harp.device.lickety-split](https://github.com/AllenNeuralDynamics/harp.device.lickety-split)
 * [harp.device.treadmill](https://github.com/AllenNeuralDynamics/harp.device.treadmill)
@@ -36,9 +36,16 @@ pico_enable_stdio_uart(${PROJECT_NAME} 1) # UART stdio for printf.
 for each library and executable using `printf` and you must link it with `pico_stdlib`.
 
 ### Debugging the Core
-`printf` messages are sprinkled throughout the Harp Core code, and they can be conditionally compiled in if you add the following to your CMakeLists.txt:
+`printf` messages are sprinkled throughout the Harp Core code, and they can be conditionally compiled by adding flags to your CMakeLists.txt.
+
+To print out details of every *outgoing* (Device to PC) messages, add:
 ````cmake
-add_definitions(-DDEBUG)
+add_definitions(-DDEBUG_HARP_MSG_OUT)
+````
+
+To print out details of every *received* (PC to Device) messages, add:
+````cmake
+add_definitions(-DDEBUG_HARP_MSG_IN)
 ````
 
 # References
