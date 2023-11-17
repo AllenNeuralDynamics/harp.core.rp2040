@@ -36,14 +36,20 @@ git submodule add git@github.com:AllenNeuralDynamics/harp.core.rp2040.git
 ````
 
 ## Setup your Project's CMakeLists.txt
-At the top of your CMakeLists.txt, you will need to include initialize the Pico SDK, and point to the folder of this library's CMakeLists.txt
-````CMakeLists.txt
+At the top of your project's CMakeLists.txt, you will need to include and initialize the Pico SDK. You can do so with:
+````cmake
 include(${PICO_SDK_PATH}/pico_sdk_init.cmake)
 pico_sdk_init()
+````
+
+Your must also point to the folder of the **Harp.Core.RP2040**'s CMakeLists.txt with
+````cmake
 add_subdirectory(/path/to/cmakelist_dir build) # Path to harp.core.rp2040's CMakeLists.txt
 ````
-After you've setup the recipe to build your executable, you can link against the Harp core libraries with:
-````CMakeLists.txt
+(Note that you must change `path/to/cmakelist_dir` above to the actual path of this project's CMakeLists.txt.)
+
+At the linking step, you can link against the Harp core libraries with:
+````cmake
 target_link_libraries(${PROJECT_NAME} harp_core harp_sync)
 ````
 
