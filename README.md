@@ -82,6 +82,11 @@ Press-and-hold the Pico's BOOTSEL button and power it up (i.e: plug it into usb)
 At this point you do one of the following:
 * drag-and-drop the created **\*.uf2** file into the mass storage device that appears on your pc.
 * flash with [picotool](https://github.com/raspberrypi/picotool)
+---
+
+# Using Bonsai
+Native packages exist in Bonsai for communicating with devices that speak Harp protocol.
+For more information on reading data or writing commands to your custom new harp device, see the [Harp Tech Bonsai notes](https://harp-tech.org/articles/operators.html).
 
 ---
 # Developer Notes
