@@ -25,7 +25,7 @@ In defining a custom Harp App, you get to decide (1) what registers exist, (2) w
 ### The App Recipe
 Simply:
 * Create a struct of elements to serve as your device's Harp registers.
-* Create a struct of `RegSpecs` to enable fast iteration through the struct.
+* Create a struct of `RegSpecs` to enable fast iteration through the struct. (Currently, this is a bit redundant and cannot be inferred easily from the code.)
 * Create a struct of read/write handler functions, one per register.
 * Define an `update` function for the app
 * Define a `reset` function for the app
