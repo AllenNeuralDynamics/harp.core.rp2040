@@ -128,6 +128,15 @@ public:
     static void write_to_read_only_reg_error(msg_t& msg);
 
 /**
+ * \brief update local register data with the payload provided in the input msg.
+ */
+    static inline void copy_msg_payload_to_register(msg_t& msg)
+    {
+        const RegSpecs& specs = self->reg_address_to_specs(msg.header.address);
+        memcpy((void*)specs.base_ptr, msg.payload, specs.num_bytes);
+    }
+
+/**
  * \brief Send a Harp-compliant timestamped reply message for the specified
  *  core or app register.
  * \details this function will lookup the particular core-or-app register's
@@ -154,6 +163,11 @@ public:
                                 const volatile uint8_t* data, uint8_t num_bytes,
                                 reg_type_t payload_type);
 
+/**
+ * \brief true if the mute flag has been set in the R_OPERATION_CTRL register.
+ */
+    static bool is_muted()
+    {return bool((self->regs.R_OPERATION_CTRL >> MUTE_RPL_OFFSET) & 0x01);}
 
 protected:
 /**
@@ -198,12 +212,6 @@ protected:
 
     virtual const RegSpecs& address_to_app_reg_specs(uint8_t address)
     {return regs_.address_to_specs[0];} // should never happen.
-
-/**
- * \brief true if the mute flag has been set in the R_OPERATION_CTRL register.
- */
-    bool is_muted()
-    {return bool((regs.R_OPERATION_CTRL >> MUTE_RPL_OFFSET) & 0x01);}
 
     bool events_enabled()
     {return (regs.R_OPERATION_CTRL & 0x03) == ACTIVE;}

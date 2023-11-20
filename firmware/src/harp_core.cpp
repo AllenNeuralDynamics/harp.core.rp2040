@@ -240,13 +240,14 @@ void HarpCore::read_reg_generic(uint8_t reg_name)
     send_harp_reply(READ, reg_name);
 }
 
+
 void HarpCore::write_reg_generic(msg_t& msg)
 {
-    const RegSpecs& specs = self->reg_address_to_specs(msg.header.address);
-    const uint8_t& reg_name = msg.header.address;
-    memcpy((void*)specs.base_ptr, msg.payload, specs.num_bytes);
+    copy_msg_payload_to_register(msg);
     if (self->is_muted())
         return;
+    const uint8_t& reg_name = msg.header.address;
+    const RegSpecs& specs = self->reg_address_to_specs(msg.header.address);
     send_harp_reply(WRITE, reg_name, specs.base_ptr, specs.num_bytes,
                     specs.payload_type);
 }

@@ -63,33 +63,6 @@ struct msg_t
 
     uint8_t payload_length()
     {return header.payload_length();}
-
-/*
- * \brief Helper function. Interpret the msg payload as a uint8_t and
- *  return a reference to it as such. Inline.
- * \warning will cause undefined behavior if the underlying data cannot
- *  be interpreted as such.
- */
-    uint8_t& payload_as_uint8()
-    {return *((uint8_t*)payload);}
-
-    int8_t& payload_as_int8()
-    {return *((int8_t*)payload);}
-
-    uint16_t& payload_as_uint16()
-    {return *((uint16_t*)payload);}
-
-    int16_t& payload_as_int16()
-    {return *((int16_t*)payload);}
-
-    uint32_t& payload_as_uint32()
-    {return *((uint32_t*)payload);}
-
-    int32_t& payload_as_int32()
-    {return *((int32_t*)payload);}
-
-    float& payload_as_float()
-    {return *((float*)payload);}
 };
 
 struct timestamped_msg_t: public msg_t
