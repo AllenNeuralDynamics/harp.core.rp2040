@@ -324,6 +324,7 @@ void HarpCore::write_operation_ctrl(msg_t& msg)
     uint8_t& write_byte = *((uint8_t*)msg.payload);
     // Update register state. Note: DUMP bit always reads as zero.
     self->regs.R_OPERATION_CTRL = write_byte & ~(0x01 << DUMP_OFFSET);
+    self->set_visual_indicators(bool((write_byte >> VISUAL_EN_OFFSET) & 0x01));
     // Bail early if we are muted.
     if (self->is_muted())
         return;

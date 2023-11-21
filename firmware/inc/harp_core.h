@@ -203,6 +203,13 @@ protected:
     virtual void reset_app(){};
 
 /**
+ * \brief Enable or disable external virtual indicators.
+ *  Does nothing in the base class, but not pure virtual since we need to be
+ *  able to instantiate a standalone harp core.
+ */
+    virtual void set_visual_indicators(bool enabled){};
+
+/**
  * \brief send one harp reply read message per app register.
  *  Called when the writing to the R_OPERATION_CTRL's DUMP bit.
  *  Does nothing in the base class, but not pure virtual since we need to be
