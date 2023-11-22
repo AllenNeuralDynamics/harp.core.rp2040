@@ -169,6 +169,9 @@ public:
     static bool is_muted()
     {return bool((self->regs.R_OPERATION_CTRL >> MUTE_RPL_OFFSET) & 0x01);}
 
+    static bool events_enabled()
+    {return (self->regs.R_OPERATION_CTRL & 0x03) == ACTIVE;}
+
 protected:
 /**
  * \brief entry point for handling incoming harp messages to core registers.
@@ -220,8 +223,6 @@ protected:
     virtual const RegSpecs& address_to_app_reg_specs(uint8_t address)
     {return regs_.address_to_specs[0];} // should never happen.
 
-    bool events_enabled()
-    {return (regs.R_OPERATION_CTRL & 0x03) == ACTIVE;}
 
 /**
  * \brief flag indicating whether or not a new message is in the rx_buffer_.
