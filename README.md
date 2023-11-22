@@ -1,6 +1,6 @@
 # Harp Core RP2040
 
-An RP2040 Harp Core that implements the [Harp Protocol](https://github.com/harp-tech/protocol) to serve as the basis of a custom Harp device.
+An RP2040 Harp Core that implements the [Harp Protocol](https://harp-tech.org/protocol/BinaryProtocol-8bit.html) to serve as the basis of a custom Harp device.
 
 ## Features
 * Synchronization to an external Harp Clock Synchronizer signal.
