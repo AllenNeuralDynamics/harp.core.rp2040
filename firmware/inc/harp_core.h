@@ -169,6 +169,10 @@ public:
     static bool is_muted()
     {return bool((self->regs.R_OPERATION_CTRL >> MUTE_RPL_OFFSET) & 0x01);}
 
+/**
+ * \brief true if the "events enabled" flag has been set in the
+ *  R_OPERATION_CTRL register.
+ */
     static bool events_enabled()
     {return (self->regs.R_OPERATION_CTRL & 0x03) == ACTIVE;}
 
