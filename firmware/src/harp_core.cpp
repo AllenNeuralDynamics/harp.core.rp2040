@@ -43,6 +43,7 @@ void HarpCore::run()
     process_cdc_input();
     if (not new_msg_)
         return;
+    last_msg_in_time_us_ = time_us_32();
 #ifdef DEBUG_HARP_MSG_IN
     msg_t msg = get_buffered_msg();
     printf("Msg data: \r\n");
@@ -144,14 +145,17 @@ void HarpCore::handle_buffered_core_message()
 void HarpCore::update_state()
 {
     uint32_t curr_time_us = time_us_32();
-    //switch (regs.R_OPERATION_CTRL & 0x03) // op mode
-    switch (regs_.r_operation_ctrl_bits.OP_MODE)
+    const uint8_t& state = regs_.r_operation_ctrl_bits.OP_MODE;
+    uint8_t next_state{state}; // init next state candidate to current state.
+    switch (state)
     {
         case STANDBY:
             break;
         case ACTIVE:
             // Drop to STANDBY mode if we've been in active mode for too long
             // without communication.
+            if ((curr_time_us - last_msg_in_time_us_) >= NO_MSG_INTERVAL_US)
+                next_state = STANDBY;
             break;
         case RESERVED:
             break;
@@ -160,7 +164,28 @@ void HarpCore::update_state()
         default:
             return;
     }
-    // Handle state LED.
+    // Handle in-state or state-edge dependent behavior.
+    // Schedule the heartbeat interval.
+    if ((state == STANDBY) && (next_state == ACTIVE))
+    {
+        // Round *up* to nearest second (multiple of 1e6).
+        uint32_t remainder;
+        uint32_t quotient = divmod_u32u32_rem(curr_time_us, HEARTBEAT_INTERVAL_US,
+                                              &remainder);
+        next_heartbeat_time_us_ = curr_time_us + HEARTBEAT_INTERVAL_US - remainder;
+    }
+    // Handle OPERATION_CTRL ALIVE_EN bit behavior.
+    if ((state == ACTIVE) // i.e: if events_enabled()
+        && regs_.r_operation_ctrl_bits.ALIVE_EN
+        && (int32_t(next_heartbeat_time_us_ - curr_time_us) >= HEARTBEAT_INTERVAL_US))
+    {
+        next_heartbeat_time_us_ += HEARTBEAT_INTERVAL_US;
+        self->update_timestamp_regs();
+        send_harp_reply(EVENT, TIMESTAMP_SECOND);
+    }
+    // TODO: Handle state LED.
+    // Do the state transition.
+    regs_.r_operation_ctrl_bits.OP_MODE = next_state;
 }
 
 const RegSpecs& HarpCore::reg_address_to_specs(uint8_t address)
