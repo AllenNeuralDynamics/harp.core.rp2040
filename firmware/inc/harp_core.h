@@ -12,10 +12,10 @@
 #include <pico/divider.h> // for fast hardware division with remainder.
 #include <hardware/timer.h>
 
-#define NO_MSG_INTERVAL_US (3'000'000UL) // Threshold duration. If no messages
-                                         // have been received for this
-                                         // duration, op mode should switch to
-                                         // IDLE.
+#define NO_PC_INTERVAL_US (3'000'000UL) // Threshold duration. If the connection
+                                        // with the PC has been inactive for
+                                        // this duration, op mode should switch
+                                        // to IDLE.
 #define HEARTBEAT_INTERVAL_US (1'000'000UL)
 
 // Create a typedef to simplify syntax for array of static function ptrs.
@@ -264,10 +264,15 @@ private:
     uint32_t next_heartbeat_time_us_;
 
 /**
- * \brief last time a message was received in microseconds.
- * \note only valid if Op Mode is in the ACTIVE state.
+ * \brief last time device detects no connection with the PC in microseconds.
+ * \note only valid if Op Mode is not in STANDBY mode.
  */
-    uint32_t last_msg_in_time_us_;
+    uint32_t disconnect_start_time_us_;
+
+/**
+ * \brief true if device has been detected as disconnected from the PC.
+ */
+    bool disconnect_detected_;
 
 /**
  * \brief Read incoming bytes from the USB serial port. Does not block.

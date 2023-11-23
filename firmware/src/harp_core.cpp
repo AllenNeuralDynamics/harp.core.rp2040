@@ -43,7 +43,6 @@ void HarpCore::run()
     process_cdc_input();
     if (not new_msg_)
         return;
-    last_msg_in_time_us_ = time_us_32();
 #ifdef DEBUG_HARP_MSG_IN
     msg_t msg = get_buffered_msg();
     printf("Msg data: \r\n");
@@ -144,7 +143,16 @@ void HarpCore::handle_buffered_core_message()
 
 void HarpCore::update_state()
 {
+    // Update internal logic.
     uint32_t curr_time_us = time_us_32();
+    if (tud_cdc_connected())
+        disconnect_detected_ = false;
+    else if (!disconnect_detected_)
+    {
+        disconnect_detected_ = true;
+        disconnect_start_time_us_ = curr_time_us;
+    }
+    // Update state machine "next-state" logic.
     const uint8_t& state = regs_.r_operation_ctrl_bits.OP_MODE;
     uint8_t next_state{state}; // init next state candidate to current state.
     switch (state)
@@ -152,19 +160,18 @@ void HarpCore::update_state()
         case STANDBY:
             break;
         case ACTIVE:
-            // Drop to STANDBY mode if we've been in active mode for too long
-            // without communication.
-            if ((curr_time_us - last_msg_in_time_us_) >= NO_MSG_INTERVAL_US)
+            // Drop to STANDBY if we've lost the PC connection for too long.
+            if (disconnect_detected_
+                && (disconnect_start_time_us_ - curr_time_us) > NO_PC_INTERVAL_US)
                 next_state = STANDBY;
             break;
         case RESERVED:
             break;
         case SPEED:
-            break;
         default:
-            return;
+            break;
     }
-    // Handle in-state or state-edge dependent behavior.
+    // Handle in-state or state-edge dependent output logic.
     // Schedule the heartbeat interval.
     if ((state == STANDBY) && (next_state == ACTIVE))
     {
