@@ -145,9 +145,9 @@ void HarpCore::update_state()
 {
     // Update internal logic.
     uint32_t curr_time_us = time_us_32();
-    if (tud_cdc_connected())
+    if (tud_ready())
         disconnect_handled_ = false;
-    if (!tud_cdc_connected() && !disconnect_handled_)
+    if (!tud_ready() && !disconnect_handled_)
     {
         disconnect_handled_ = true;
         disconnect_start_time_us_ = curr_time_us;
