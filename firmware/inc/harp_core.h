@@ -270,9 +270,10 @@ private:
     uint32_t disconnect_start_time_us_;
 
 /**
- * \brief true if device has been detected as disconnected from the PC.
+ * \brief flag to indicate the the device was disconnected and the event has
+ *  been handled.
  */
-    bool disconnect_detected_;
+    bool disconnect_handled_;
 
 /**
  * \brief Read incoming bytes from the USB serial port. Does not block.
