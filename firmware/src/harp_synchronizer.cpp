@@ -90,6 +90,15 @@ void HarpSynchronizer::uart_rx_callback()
     #ifdef DEBUG
     printf("time is: %llu [us]\r\n", curr_us);
     #endif
+    // Update all armed alarms with new timestamps.
+    for (uint8_t i = 0; i < NUM_TIMERS; ++i)
+    {
+        // Only update armed alarms.
+        if (!((timer_hw->armed >> i) & 0x0001))
+            continue;
+        // Write back corrected firing time.
+        timer_hw->alarm[i] = curr_us + timer_hw->alarm[i] - time_us_32();
+    }
     // Time update does not take place until timehw is written to.
     timer_hw->timelw = (uint32_t)curr_us;
     timer_hw->timehw = (uint32_t)(curr_us >> 32);
