@@ -163,7 +163,7 @@ void HarpCore::update_state()
         case ACTIVE:
             // Drop to STANDBY if we've lost the PC connection for too long.
             if (disconnect_detected_
-                && (disconnect_start_time_us_ - curr_time_us) > NO_PC_INTERVAL_US)
+                && (curr_time_us - disconnect_start_time_us_) >= NO_PC_INTERVAL_US)
                 next_state = STANDBY;
             break;
         case RESERVED:
@@ -185,7 +185,8 @@ void HarpCore::update_state()
     // Handle OPERATION_CTRL ALIVE_EN bit behavior.
     if ((state == ACTIVE) // i.e: if events_enabled()
         && regs_.r_operation_ctrl_bits.ALIVE_EN
-        && (int32_t(next_heartbeat_time_us_ - curr_time_us) >= HEARTBEAT_INTERVAL_US))
+        && (int32_t(curr_time_us - next_heartbeat_time_us_) >= 0))
+        //&& (int32_t(next_heartbeat_time_us_ - curr_time_us) >= HEARTBEAT_INTERVAL_US))
     {
         next_heartbeat_time_us_ += HEARTBEAT_INTERVAL_US;
         self->update_timestamp_regs();
