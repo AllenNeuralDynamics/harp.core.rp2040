@@ -158,7 +158,8 @@ void HarpCore::update_state()
     switch (state)
     {
         case STANDBY:
-            break;
+            if (!disconnect_detected_)
+                next_state = ACTIVE;
         case ACTIVE:
             // Drop to STANDBY if we've lost the PC connection for too long.
             if (disconnect_detected_
