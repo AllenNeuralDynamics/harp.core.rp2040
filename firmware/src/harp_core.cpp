@@ -143,24 +143,57 @@ void HarpCore::handle_buffered_core_message()
 
 void HarpCore::update_state()
 {
+    // Update internal logic.
     uint32_t curr_time_us = time_us_32();
-    //switch (regs.R_OPERATION_CTRL & 0x03) // op mode
-    switch (regs_.r_operation_ctrl_bits.OP_MODE)
+    if (tud_cdc_connected())
+        disconnect_detected_ = false;
+    else if (!disconnect_detected_)
+    {
+        disconnect_detected_ = true;
+        disconnect_start_time_us_ = curr_time_us;
+    }
+    // Update state machine "next-state" logic.
+    const uint8_t& state = regs_.r_operation_ctrl_bits.OP_MODE;
+    uint8_t next_state{state}; // init next state candidate to current state.
+    switch (state)
     {
         case STANDBY:
-            break;
+            if (!disconnect_detected_)
+                next_state = ACTIVE;
         case ACTIVE:
-            // Drop to STANDBY mode if we've been in active mode for too long
-            // without communication.
+            // Drop to STANDBY if we've lost the PC connection for too long.
+            if (disconnect_detected_
+                && (curr_time_us - disconnect_start_time_us_) >= NO_PC_INTERVAL_US)
+                next_state = STANDBY;
             break;
         case RESERVED:
             break;
         case SPEED:
-            break;
         default:
-            return;
+            break;
     }
-    // Handle state LED.
+    // Handle in-state or state-edge dependent output logic.
+    // Schedule the heartbeat interval.
+    if ((state == STANDBY) && (next_state == ACTIVE))
+    {
+        // Round *up* to nearest second (multiple of 1e6).
+        uint32_t remainder;
+        uint32_t quotient = divmod_u32u32_rem(curr_time_us, HEARTBEAT_INTERVAL_US,
+                                              &remainder);
+        next_heartbeat_time_us_ = curr_time_us + HEARTBEAT_INTERVAL_US - remainder;
+    }
+    // Handle OPERATION_CTRL ALIVE_EN bit behavior.
+    if ((state == ACTIVE) // i.e: if events_enabled()
+        && regs_.r_operation_ctrl_bits.ALIVE_EN
+        && (int32_t(curr_time_us - next_heartbeat_time_us_) >= 0))
+    {
+        next_heartbeat_time_us_ += HEARTBEAT_INTERVAL_US;
+        self->update_timestamp_regs();
+        send_harp_reply(EVENT, TIMESTAMP_SECOND);
+    }
+    // TODO: Handle state LED.
+    // Do the state transition.
+    regs_.r_operation_ctrl_bits.OP_MODE = next_state;
 }
 
 const RegSpecs& HarpCore::reg_address_to_specs(uint8_t address)

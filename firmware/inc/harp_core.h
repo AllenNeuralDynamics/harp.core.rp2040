@@ -9,7 +9,14 @@
 
 // Pico-specific includes.
 #include <hardware/structs/timer.h>
+#include <pico/divider.h> // for fast hardware division with remainder.
 #include <hardware/timer.h>
+
+#define NO_PC_INTERVAL_US (3'000'000UL) // Threshold duration. If the connection
+                                        // with the PC has been inactive for
+                                        // this duration, op mode should switch
+                                        // to IDLE.
+#define HEARTBEAT_INTERVAL_US (1'000'000UL)
 
 // Create a typedef to simplify syntax for array of static function ptrs.
 typedef void (*read_reg_fn)(uint8_t reg);
@@ -249,6 +256,23 @@ private:
  * \brief #rx_buffer_ index where the next incoming byte will be written.
  */
     uint8_t rx_buffer_index_;
+
+/**
+ * \brief next time a heartbeat message is scheduled to issue.
+ * \note only valid if Op Mode is in the ACTIVE state.
+ */
+    uint32_t next_heartbeat_time_us_;
+
+/**
+ * \brief last time device detects no connection with the PC in microseconds.
+ * \note only valid if Op Mode is not in STANDBY mode.
+ */
+    uint32_t disconnect_start_time_us_;
+
+/**
+ * \brief true if device has been detected as disconnected from the PC.
+ */
+    bool disconnect_detected_;
 
 /**
  * \brief Read incoming bytes from the USB serial port. Does not block.

@@ -13,8 +13,8 @@ static const uint8_t CORE_REG_COUNT = 16;
 #define DUMP_OFFSET (3)
 #define MUTE_RPL_OFFSET (4)
 #define VISUAL_EN_OFFSET (5)
-#define OPLEDEN (6)
-#define ALIVE_EN (7)
+#define OPLEDEN_OFFSET (6)
+#define ALIVE_EN_OFFSET (7)
 
 // RESET_DEF bitfields
 #define RST_DEF_OFFSET (0)
