@@ -74,6 +74,7 @@ int main()
 {
 // Init Synchronizer.
     HarpSynchronizer& sync = HarpSynchronizer::init(uart1, 5);
+    app.set_synchronizer(&sync);
 #ifdef DEBUG
     stdio_uart_init_full(uart0, 921600, 0, -1); // use uart1 tx only.
     printf("Hello, from an RP2040!\r\n");
