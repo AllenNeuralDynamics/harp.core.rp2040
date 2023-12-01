@@ -27,15 +27,13 @@ HarpCApp::HarpCApp(uint16_t who_am_i,
                    uint16_t serial_number, const char name[],
                    void* app_reg_values, RegSpecs* app_reg_specs,
                    RegFnPair* app_reg_fns, size_t app_reg_count,
-                   void (*update_fn)(void), void (* reset_fn)(void),
-                   void (*set_visual_indicators_fn)(bool))
+                   void (*update_fn)(void), void (* reset_fn)(void))
 :reg_values_{app_reg_values},
  reg_specs_{app_reg_specs},
  reg_fns_{app_reg_fns},
  reg_count_{app_reg_count},
  update_fn_{update_fn},
  reset_fn_{update_fn},
- set_visual_indicators_fn_{set_visual_indicators_fn},
  HarpCore(who_am_i, hw_version_major, hw_version_minor,
           assembly_version, harp_version_major, harp_version_minor,
           fw_version_major, fw_version_minor, serial_number, name)
@@ -72,23 +70,6 @@ void HarpCApp::handle_buffered_app_message()
         }
     }
     clear_msg();
-}
-
-void HarpCApp::update_app_state()
-{
-    update_fn_();
-}
-
-void HarpCApp::reset_app()
-{
-    reset_fn_();
-}
-
-void HarpCApp::set_visual_indicators(bool state)
-{
-    // nullptr check since this function is optional.
-    if (set_visual_indicators_fn_ != nullptr)
-        set_visual_indicators_fn_(state);
 }
 
 void HarpCApp::dump_app_registers()

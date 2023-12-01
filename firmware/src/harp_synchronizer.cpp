@@ -3,7 +3,7 @@
 
 HarpSynchronizer::HarpSynchronizer(uart_inst_t* uart_id, uint8_t uart_rx_pin)
 :uart_id_{uart_id}, packet_index_{0}, sync_data_{0, 0, 0, 0},
- state_{RECEIVE_HEADER_0}, new_timestamp_{false}
+ state_{RECEIVE_HEADER_0}, new_timestamp_{false}, offset_us_64_{0}
 {
     // Create a pointer to the first (and one-and-only) instance created.
     if (self == nullptr)
@@ -49,7 +49,7 @@ void HarpSynchronizer::uart_rx_callback()
     {
         new_byte = uart_getc(self->uart_id_);
         #ifdef DEBUG
-        printf("state: %d | byte: 0x%x\r\n", self->state_, new_byte);
+        //printf("state: %d | byte: 0x%x\r\n", self->state_, new_byte);
         #endif
         switch (self->state_)
         {
@@ -86,22 +86,11 @@ void HarpSynchronizer::uart_rx_callback()
     // Interpret 4-byte sequence as a little-endian uint32_t.
     // Add 1[s] per protocol spec since 4-byte sequence encodes previous second.
     uint32_t sec = *((uint32_t*)(self->sync_data_)) + 1;
-    uint64_t curr_us = uint64_t(sec) * 1000000 - HARP_SYNC_OFFSET_US;
+    uint64_t curr_harp_us = uint64_t(sec) * 1000000 - HARP_SYNC_OFFSET_US;
     #ifdef DEBUG
-    printf("time is: %llu [us]\r\n", curr_us);
+    printf("harp time is: %llu [us]\r\n", curr_harp_us);
     #endif
-    // Update all armed alarms with new timestamps.
-    for (uint8_t i = 0; i < NUM_TIMERS; ++i)
-    {
-        // Only update armed alarms.
-        if (!((timer_hw->armed >> i) & 0x0001))
-            continue;
-        // Write back corrected firing time.
-        timer_hw->alarm[i] = curr_us + timer_hw->alarm[i] - time_us_32();
-    }
-    // Time update does not take place until timehw is written to.
-    timer_hw->timelw = (uint32_t)curr_us;
-    timer_hw->timehw = (uint32_t)(curr_us >> 32);
+    self->offset_us_64_ = ::time_us_64() - curr_harp_us;
     // Cleanup.
     self->new_timestamp_ = false;
     restore_interrupts(interrupt_status);
