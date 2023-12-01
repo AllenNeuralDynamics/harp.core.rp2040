@@ -53,6 +53,22 @@ public:
  */
     static HarpSynchronizer& instance(){return *self;}
 
+/**
+ * \brief get the total elapsed microseconds (64-bit) in "Harp" time.
+ * \warning this value is not monotonic and can change at any time if an
+ *  external synchronizer is physically connected and operating.
+ */
+    uint64_t time_us_64()
+    {return ::time_us_64() - offset_us_64_;}
+
+/**
+ * \brief get the total elapsed microseconds (32-bit) in "Harp" time.
+ * \warning this value is not monotonic and can change at any time if an
+ *  external synchronizer is physically connected and operating.
+ */
+    uint32_t time_us_32()
+    {return ::time_us_32() - uint32_t(offset_us_64_);}
+
 private:
 /**
  * \brief a pointer to the one-and-only instance or nullptr if init() was
@@ -72,11 +88,20 @@ private:
     volatile SyncState state_;
     volatile uint8_t packet_index_;
     volatile bool new_timestamp_;
+
+    uint64_t offset_us_64_;
 /**
  * \brief container to store the little-endian timestamp and then
  *  reinterpret-cast to the value.
  */
     alignas(uint32_t) volatile uint8_t sync_data_[4];
+
+/**
+ * \brief HarpCore is a friend such that updating the HarpCore's timestamp
+ *  registers will update the HarpSynchronizer #offset_us_64_ instead of
+ *  the HarpCore's internal offset.
+ */
+    friend class HarpCore;
 };
 
 #endif // HARP_SYNCHRONIZER_H

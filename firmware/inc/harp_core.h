@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <harp_message.h>
 #include <core_registers.h>
+#include <harp_synchronizer.h>
 #include <arm_regs.h>
 #include <cstring> // for memcpy
 #include <tusb.h>
@@ -183,6 +184,47 @@ public:
     static bool events_enabled()
     {return (self->regs.R_OPERATION_CTRL & 0x03) == ACTIVE;}
 
+/**
+ * \brief get the total elapsed microseconds (64-bit) in "Harp" time.
+ * \details  Internally, an offset is tracked and updated where
+ *  \f$t_{Harp} = t_{local} - t_{offset} \f$
+ * \warning this value is not monotonic and can change at any time if (1) an
+ *  external synchronizer is physically connected and operating and (2) this
+ *  class instance has configured a synchronizer with set_synchronizer().
+ */
+    static uint64_t harp_time_us_64()
+    {return (self->sync_ == nullptr)?
+                time_us_64() - self->offset_us_64_:
+                self->sync_->time_us_64();}
+
+/**
+ * \brief get the total elapsed microseconds (32-bit) in "Harp" time.
+ * \details  Internally, an offset is tracked and updated where
+ *  \f$t_{Harp} = t_{local} - t_{offset} \f$
+ * \warning this value is not monotonic and can change at any time if (1) an
+ *  external synchronizer is physically connected and operating and (2) this
+ *  class instance has configured a synchronizer with set_synchronizer().
+ */
+    static uint32_t harp_time_us_32()
+    {return (self->sync_ == nullptr)?
+                time_us_32() - uint32_t(self->offset_us_64_):
+                self->sync_->time_us_32();}
+
+/**
+ * \brief attach a synchronizer. If the synchronizer is attached, then calls to
+ *  harp_time_us_64() and harp_time_us_32() will reflect the synchronizer's
+ *  time.
+ */
+    static void set_synchronizer(HarpSynchronizer* sync)
+    {self->sync_ = sync;}
+
+/**
+ * \brief attach a callback function to control external visual indicators
+ *  (i.e: LEDs).
+ */
+    static void set_visual_indicators_fn(void (*func)(bool))
+    {self->set_visual_indicators_fn_ = func;}
+
 protected:
 /**
  * \brief entry point for handling incoming harp messages to core registers.
@@ -218,10 +260,10 @@ protected:
 
 /**
  * \brief Enable or disable external virtual indicators.
- *  Does nothing in the base class, but not pure virtual since we need to be
- *  able to instantiate a standalone harp core.
  */
-    virtual void set_visual_indicators(bool enabled){};
+    virtual void set_visual_indicators(bool enabled)
+    {if (set_visual_indicators_fn_ != nullptr)
+        set_visual_indicators_fn_(enabled);}
 
 /**
  * \brief send one harp reply read message per app register.
@@ -236,9 +278,19 @@ protected:
 
 
 /**
- * \brief flag indicating whether or not a new message is in the rx_buffer_.
+ * \brief flag indicating whether or not a new message is in the #rx_buffer_.
  */
     bool new_msg_;
+
+/**
+ * \brief function pointer to function that enables/disables visual indicators.
+ */
+    void (* set_visual_indicators_fn_)(bool);
+
+/**
+ * \brief function pointer to synchronizer if configured.
+ */
+    HarpSynchronizer* sync_;
 
 private:
 /**
@@ -256,6 +308,15 @@ private:
  * \brief #rx_buffer_ index where the next incoming byte will be written.
  */
     uint8_t rx_buffer_index_;
+
+/**
+ * \brief local offset from "Harp time" to device hardware timer tracing
+ *  elapsed microseconds since boot, where
+ *  \f$t_{offset} = t_{local} - t_{Harp} \f$
+ * \note if a synchronizer is attached with set_synchronizer(), then
+ * this value is not used.
+ */
+    uint64_t offset_us_64_;
 
 /**
  * \brief next time a heartbeat message is scheduled to issue.

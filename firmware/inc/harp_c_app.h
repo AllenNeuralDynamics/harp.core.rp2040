@@ -26,8 +26,6 @@ private:
  * \param update_fn pointer to function that will be called periodically to
  *  update the app state.
  * \param reset_fn pointer to function that will reset the app state.
- * \param set_visual_indicators_fn (optional) pointer to function that will
- *  enable/disable any device external visual indicators.
  */
     HarpCApp(uint16_t who_am_i,
              uint8_t hw_version_major, uint8_t hw_version_minor,
@@ -37,8 +35,7 @@ private:
              uint16_t serial_number, const char name[],
              void* app_reg_values, RegSpecs* app_reg_specs,
              RegFnPair* reg_fns, size_t app_reg_count,
-             void (* update_fn)(void), void (* reset_fn)(void),
-             void (* set_visual_indicators_fn)(bool) = nullptr);
+             void (* update_fn)(void), void (* reset_fn)(void));
 
     ~HarpCApp();
 
@@ -74,19 +71,23 @@ private:
  * \brief update app state. Readable registers can be updated here.
  *  Implements virtual member fn in base class of the same name.
  */
-    void update_app_state();
+    void update_app_state()
+    {update_fn_();}
 
 /**
  * \brief Reset the app state.
  *  Implements virtual member fn in base class of the same name.
  */
-    void reset_app();
+    void reset_app()
+    {reset_fn_();}
 
 /**
  * \brief Enable or disable external visual indicators.
  *  Implements virtual member fn in base class of the same name.
  */
-    void set_visual_indicators(bool enabled);
+    void set_visual_indicators(bool enabled)
+    {if (set_visual_indicators_fn_ != nullptr)
+        set_visual_indicators_fn_(enabled);}
 
 /**
  * \brief send one harp reply read message per app register.
@@ -110,7 +111,6 @@ private:
     size_t reg_count_;
     void (* update_fn_)(void);
     void (* reset_fn_)(void);
-    void (* set_visual_indicators_fn_)(bool);
 };
 
 #endif //HARP_C_APP_H
