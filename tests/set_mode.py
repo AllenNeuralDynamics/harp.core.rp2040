@@ -17,21 +17,23 @@ else: # assume Windows.
     device = Device("COM95", "ibl.bin")
 
 
+print(f"Device mode is: {device.read_device_mode()}")
 for i in range(2):
+    sleep(0.25)
     print("Setting device mode to Active.")
     reply = device.set_mode(DeviceMode.Active)
-    print("reply to set mode is: ")
-    print(reply)
+    #print("reply to set mode is: ")
+    #print(reply)
     print(f"Device mode is now: {device.read_device_mode()}")
 
     print("Setting device mode to Standby.")
     reply = device.set_mode(DeviceMode.Standby)
-    print("reply to set mode is: ")
-    print(reply)
+    #print("reply to set mode is: ")
+    #print(reply)
     print(f"Device mode is now: {device.read_device_mode()}")
 
     print()
-    sleep(0.5)
+    sleep(0.25)
 
 # Close connection
 device.disconnect()

@@ -22,7 +22,7 @@ else: # assume Windows.
     device = Device("COM95", "ibl.bin")
 device.info()                           # Display device's info on screen
 # dump registers.
-print("Register dump:")
-print(device.dump_registers())
+#print("Register dump:")
+#print(device.dump_registers())
 # Close connection
 device.disconnect()

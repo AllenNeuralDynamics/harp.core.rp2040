@@ -241,8 +241,12 @@ protected:
 
 /**
  * \brief update internal state machine.
+ * \param force. If true, the state will change to the op_mode code encoded
+ *  in the latest incoming message payload.
+ * \warning this function should only ever be called with \force = true
+ *  from within the write_operation_ctrl() function.
  */
-    void update_state();
+    void update_state(bool force = false);
 
 /**
  * \brief update state of the derived class. Does nothing in the base class,
@@ -335,6 +339,12 @@ private:
  *  been handled.
  */
     bool disconnect_handled_;
+
+/**
+ * \brief flag to indicate the the device was connected and the event has
+ *  been handled.
+ */
+    bool connect_handled_;
 
 /**
  * \brief Read incoming bytes from the USB serial port. Does not block.
