@@ -265,7 +265,7 @@ protected:
 /**
  * \brief Enable or disable external virtual indicators.
  */
-    virtual void set_visual_indicators(bool enabled)
+    void set_visual_indicators(bool enabled)
     {if (set_visual_indicators_fn_ != nullptr)
         set_visual_indicators_fn_(enabled);}
 

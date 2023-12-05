@@ -82,14 +82,6 @@ private:
     {reset_fn_();}
 
 /**
- * \brief Enable or disable external visual indicators.
- *  Implements virtual member fn in base class of the same name.
- */
-    void set_visual_indicators(bool enabled)
-    {if (set_visual_indicators_fn_ != nullptr)
-        set_visual_indicators_fn_(enabled);}
-
-/**
  * \brief send one harp reply read message per app register.
  *  Implements virtual member fn in base class of the same name.
  */
