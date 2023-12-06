@@ -189,7 +189,7 @@ void HarpCore::update_state(bool force)
     }
     // Handle state edge output logic.
     // Schedule the heartbeat interval.
-    if (next_state == ACTIVE)
+    if ((state != ACTIVE) && (next_state == ACTIVE))
     {
         connect_handled_ = true;
         // Round *up* to the nearest HEARTBEAT_INTERVAL_US.
