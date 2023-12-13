@@ -58,16 +58,43 @@ public:
  * \warning this value is not monotonic and can change at any time if an
  *  external synchronizer is physically connected and operating.
  */
-    uint64_t time_us_64()
-    {return ::time_us_64() - offset_us_64_;}
+    static uint64_t time_us_64()
+    {return ::time_us_64() - self->offset_us_64_;}
 
 /**
  * \brief get the total elapsed microseconds (32-bit) in "Harp" time.
  * \warning this value is not monotonic and can change at any time if an
  *  external synchronizer is physically connected and operating.
  */
-    uint32_t time_us_32()
-    {return ::time_us_32() - uint32_t(offset_us_64_);}
+    static uint32_t time_us_32()
+    {return ::time_us_32() - uint32_t(self->offset_us_64_);}
+
+/**
+ * \brief convert harp time (in 64-bit microseconds) to local system time
+ *  (in 64-bit microseconds).
+ * \details this utility function is useful for setting alarms in the device's
+ *  local time domain, which is monotonic and unchanged by adjustments to
+ *  the harp time.
+ */
+    static uint64_t harp_to_system_us_64(uint64_t harp_time_us)
+    {return harp_time_us + self->offset_us_64_;}
+
+/**
+ * \brief convert harp time (in 32-bit microseconds) to local system time
+ *  (in 32-bit microseconds).
+ * \details this utility function is useful for setting alarms in the device's
+ *  local time domain, which is monotonic and unchanged by adjustments to
+ *  the harp time.
+ */
+    static uint32_t harp_to_system_us_32(uint32_t harp_time_us)
+    {return harp_time_us + uint32_t(self->offset_us_64_);}
+
+/**
+ * \brief true if the synchronizer has received at least one external sync
+ *  signal.
+ */
+    static bool has_synced()
+    {return self->has_synced_;}
 
 private:
 /**
@@ -90,6 +117,8 @@ private:
     volatile bool new_timestamp_;
 
     uint64_t offset_us_64_;
+
+    bool has_synced_;
 /**
  * \brief container to store the little-endian timestamp and then
  *  reinterpret-cast to the value.

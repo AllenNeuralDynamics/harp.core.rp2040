@@ -211,6 +211,36 @@ public:
                 self->sync_->time_us_32();}
 
 /**
+ * \brief convert harp time (in 64-bit microseconds) to local system time
+ *  (in 64-bit microseconds).
+ * \details this utility function is useful for setting alarms in the device's
+ *  local time domain, which is monotonic and unchanged by adjustments to
+ *  the harp time.
+ * \note if synchronizer is attached, the conversion will be in reference to
+ *  the externally synchronized time.
+ * \param harp_time_us the current time in microseconds
+ */
+    static uint64_t harp_to_system_us_64(uint64_t harp_time_us)
+    {return (self->sync_ == nullptr)?
+                harp_time_us + self->offset_us_64_:
+                self->sync_->harp_to_system_us_64(harp_time_us);}
+
+/**
+ * \brief convert harp time (in 32-bit microseconds) to local system time
+ *  (in 32-bit microseconds).
+ * \details this utility function is useful for setting alarms in the device's
+ *  local time domain, which is monotonic and unchanged by adjustments to
+ *  the harp time.
+ * \note if synchronizer is attached, the conversion will be in reference to
+ *  the externally synchronized time.
+ * \param harp_time_us the current time in microseconds
+ */
+    static uint32_t harp_to_system_us_32(uint32_t harp_time_us)
+    {return (self->sync_ == nullptr)?
+                harp_time_us + uint32_t(self->offset_us_64_):
+                self->sync_->harp_to_system_us_32(harp_time_us);}
+
+/**
  * \brief attach a synchronizer. If the synchronizer is attached, then calls to
  *  harp_time_us_64() and harp_time_us_32() will reflect the synchronizer's
  *  time.
