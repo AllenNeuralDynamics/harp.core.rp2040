@@ -18,6 +18,7 @@ Additionally, are a few examples that use the RP2040 Harp Core as a submodule in
 * [harp.device.treadmill](https://github.com/AllenNeuralDynamics/harp.device.treadmill)
 * [harp.device.ttl-io](https://github.com/AllenNeuralDynamics/harp.device.ttl-io)
 * [harp.pico.cam-trigger](https://github.com/AllenNeuralDynamics/harp.pico.cam-trigger)
+* [harp.pico.ephys-sync](https://github.com/AllenNeuralDynamics/harp.pico.ephys-sync)
 
 ---
 # Using this Library
