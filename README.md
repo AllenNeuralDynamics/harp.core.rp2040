@@ -14,6 +14,7 @@ See the [examples](./examples) folder to get a feel for incorporating the harp c
 Additionally, are a few examples that use the RP2040 Harp Core as a submodule in the wild:
 * [harp.device.environment-sensor](https://github.com/AllenNeuralDynamics/harp.device.environment_sensor)
 * [harp.device.lickety-split](https://github.com/AllenNeuralDynamics/harp.device.lickety-split)
+* [harp.device.sniff-detector](https://github.com/AllenNeuralDynamics/harp.device.sniff-detector)
 * [harp.device.treadmill](https://github.com/AllenNeuralDynamics/harp.device.treadmill)
 * [harp.device.ttl-io](https://github.com/AllenNeuralDynamics/harp.device.ttl-io)
 * [harp.pico.cam-trigger](https://github.com/AllenNeuralDynamics/harp.pico.cam-trigger)
