@@ -225,6 +225,12 @@ public:
     static void set_visual_indicators_fn(void (*func)(bool))
     {self->set_visual_indicators_fn_ = func;}
 
+/**
+ * \brief force the op mode state. Useful to put the core in an error state.
+ */
+    static void force_state(op_mode_t next_state)
+    {self->update_state(true, next_state);}
+
 protected:
 /**
  * \brief entry point for handling incoming harp messages to core registers.
@@ -238,15 +244,6 @@ protected:
  *  harp core.
  */
     virtual void handle_buffered_app_message(){};
-
-/**
- * \brief update internal state machine.
- * \param force. If true, the state will change to the op_mode code encoded
- *  in the latest incoming message payload.
- * \warning this function should only ever be called with \force = true
- *  from within the write_operation_ctrl() function.
- */
-    void update_state(bool force = false);
 
 /**
  * \brief update state of the derived class. Does nothing in the base class,
@@ -352,6 +349,17 @@ private:
  *      buffered message may be be overwritten if a new message has arrived.
  */
     void process_cdc_input();
+
+/**
+ * \brief update internal state machine.
+ * \param force. If true, the state will change to the #forced_next_state.
+ *  Otherwise, the #forced_next_state is ignored.
+ * \param forced_next_state if #force then this is the next state that the
+ *  op mode state machine will enter.
+ */
+    static void update_state(bool force = false,
+                             op_mode_t forced_next_state = STANDBY);
+
 
 /**
  * \brief move the current CPU time to the timestamp registers.

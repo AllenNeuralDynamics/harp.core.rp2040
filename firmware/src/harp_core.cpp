@@ -143,40 +143,35 @@ void HarpCore::handle_buffered_core_message()
     clear_msg();
 }
 
-void HarpCore::update_state(bool force)
+void HarpCore::update_state(bool force, op_mode_t forced_next_state)
 {
     // Update internal logic.
     uint32_t curr_time_us = harp_time_us_32();
     // Extra logic so that we only act on the connection/disconnection event
     // changes once. State changes are connection/disconnection dependendent,
     // but after connecting, the PC is able to override the state at any point.
-    disconnect_handled_ = tud_cdc_connected()? false: disconnect_handled_;
-    connect_handled_ = tud_cdc_connected()? connect_handled_: false;
-    if (!tud_cdc_connected() && !disconnect_handled_)
+    self->disconnect_handled_ = tud_cdc_connected()?
+                                    false: self->disconnect_handled_;
+    self->connect_handled_ = tud_cdc_connected()? self->connect_handled_: false;
+    if (!tud_cdc_connected() && !self->disconnect_handled_)
     {
-        disconnect_handled_ = true;
-        disconnect_start_time_us_ = curr_time_us;
+        self->disconnect_handled_ = true;
+        self->disconnect_start_time_us_ = curr_time_us;
     }
     // Update state machine "next-state" logic.
-    const uint8_t& state = regs_.r_operation_ctrl_bits.OP_MODE;
-    // if forcing the state from a write msg to R_OPERATION_CTRL, extract the
-    // next state from the latest received msg.
-    // Otherwise, init next_state candidate to the current state.
-    uint8_t& write_byte = *((uint8_t*)get_buffered_msg().payload);
-    uint8_t next_state = force?
-        (*((OperationCtrlBits*)(&write_byte))).OP_MODE:
-        state;
+    const uint8_t& state = self->regs_.r_operation_ctrl_bits.OP_MODE;
+    uint8_t next_state = force? forced_next_state: state;
     if (!force)
     {
         switch (state)
         {
             case STANDBY:
-                if (tud_cdc_connected() && !connect_handled_)
+                if (tud_cdc_connected() && !self->connect_handled_)
                     next_state = ACTIVE;
             case ACTIVE:
                 // Drop to STANDBY if we've lost the PC connection for too long.
-                if (!tud_cdc_connected() && disconnect_handled_
-                    && (curr_time_us - disconnect_start_time_us_) >= NO_PC_INTERVAL_US)
+                if (!tud_cdc_connected() && self->disconnect_handled_
+                    && (curr_time_us - self->disconnect_start_time_us_) >= NO_PC_INTERVAL_US)
                     next_state = STANDBY;
                 break;
             case RESERVED:
@@ -191,28 +186,28 @@ void HarpCore::update_state(bool force)
     // Schedule the heartbeat interval.
     if ((state != ACTIVE) && (next_state == ACTIVE))
     {
-        connect_handled_ = true;
+        self->connect_handled_ = true;
         // Round *up* to the nearest HEARTBEAT_INTERVAL_US.
         uint32_t curr_time_us = harp_time_us_32();
         uint32_t remainder;
         uint32_t quotient = divmod_u32u32_rem(curr_time_us,
                                               HEARTBEAT_INTERVAL_US,
                                               &remainder);
-        next_heartbeat_time_us_ = curr_time_us + HEARTBEAT_INTERVAL_US
-                                  - remainder;
+        self->next_heartbeat_time_us_ = curr_time_us + HEARTBEAT_INTERVAL_US
+                                        - remainder;
     }
     // Handle in-state dependent output logic.
     // Handle OPERATION_CTRL ALIVE_EN bit behavior.
     if ((state == ACTIVE) // i.e: if events_enabled()
-        && regs_.r_operation_ctrl_bits.ALIVE_EN
-        && (int32_t(curr_time_us - next_heartbeat_time_us_) >= 0))
+        && self->regs_.r_operation_ctrl_bits.ALIVE_EN
+        && (int32_t(curr_time_us - self->next_heartbeat_time_us_) >= 0))
     {
-        next_heartbeat_time_us_ += HEARTBEAT_INTERVAL_US;
+        self->next_heartbeat_time_us_ += HEARTBEAT_INTERVAL_US;
         send_harp_reply(EVENT, TIMESTAMP_SECOND);
     }
     // TODO: Handle state LED.
     // Do the state transition.
-    regs_.r_operation_ctrl_bits.OP_MODE = next_state;
+    self->regs_.r_operation_ctrl_bits.OP_MODE = next_state;
 }
 
 const RegSpecs& HarpCore::reg_address_to_specs(uint8_t address)
@@ -386,7 +381,7 @@ void HarpCore::write_operation_ctrl(msg_t& msg)
     const uint8_t& state = self->regs_.r_operation_ctrl_bits.OP_MODE;
     const uint8_t& next_state = (*((OperationCtrlBits*)(&write_byte))).OP_MODE;
     if (state != next_state)
-        self->update_state(true);
+        self->force_state((op_mode_t)next_state);
     // Update register state. Note: DUMP bit always reads as zero.
     self->regs.R_OPERATION_CTRL = write_byte & ~(0x01 << DUMP_OFFSET);
     self->set_visual_indicators(bool((write_byte >> VISUAL_EN_OFFSET) & 0x01));
