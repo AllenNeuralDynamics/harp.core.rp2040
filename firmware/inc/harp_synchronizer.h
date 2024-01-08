@@ -118,7 +118,7 @@ private:
 
     uint64_t offset_us_64_;
 
-    bool has_synced_;
+    volatile bool has_synced_;
 /**
  * \brief container to store the little-endian timestamp and then
  *  reinterpret-cast to the value.
