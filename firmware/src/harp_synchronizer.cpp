@@ -3,7 +3,8 @@
 
 HarpSynchronizer::HarpSynchronizer(uart_inst_t* uart_id, uint8_t uart_rx_pin)
 :uart_id_{uart_id}, packet_index_{0}, sync_data_{0, 0, 0, 0},
- state_{RECEIVE_HEADER_0}, new_timestamp_{false}, offset_us_64_{0}
+ state_{RECEIVE_HEADER_0}, new_timestamp_{false}, offset_us_64_{0},
+ has_synced_{false}
 {
     // Create a pointer to the first (and one-and-only) instance created.
     if (self == nullptr)
@@ -91,6 +92,7 @@ void HarpSynchronizer::uart_rx_callback()
     printf("harp time is: %llu [us]\r\n", curr_harp_us);
     #endif
     self->offset_us_64_ = ::time_us_64() - curr_harp_us;
+    self->has_synced_ = true;
     // Cleanup.
     self->new_timestamp_ = false;
     restore_interrupts(interrupt_status);
