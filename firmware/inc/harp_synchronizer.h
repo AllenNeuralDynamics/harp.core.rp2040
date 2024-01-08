@@ -112,11 +112,12 @@ private:
 
     uart_inst_t* uart_id_;
 
+    // members edited within an ISR must be volatile.
     volatile SyncState state_;
     volatile uint8_t packet_index_;
     volatile bool new_timestamp_;
 
-    uint64_t offset_us_64_;
+    volatile uint64_t offset_us_64_;
 
     volatile bool has_synced_;
 /**
