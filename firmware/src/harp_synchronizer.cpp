@@ -41,7 +41,7 @@ HarpSynchronizer& HarpSynchronizer::init(uart_inst_t* uart_id,
 void HarpSynchronizer::uart_rx_callback()
 {
     // Hush interrupts, since we make assumptions about how long this fn takes.
-    uint32_t interrupt_status = save_and_disable_interrupts();
+    //uint32_t interrupt_status = save_and_disable_interrupts();
     SyncState next_state_{self->state_}; // Init next state at curr state value.
     uint8_t new_byte;
     // This State machine "ticks" every time we receive at least one new byte.
@@ -80,21 +80,21 @@ void HarpSynchronizer::uart_rx_callback()
     }
     if (not self->new_timestamp_)
     {
-        restore_interrupts(interrupt_status);
+        //restore_interrupts(interrupt_status);
         return;
     }
     // Apply new timestamp data.
     // Interpret 4-byte sequence as a little-endian uint32_t.
     // Add 1[s] per protocol spec since 4-byte sequence encodes previous second.
     uint32_t sec = *((uint32_t*)(self->sync_data_)) + 1;
-    uint64_t curr_harp_us = uint64_t(sec) * 1000000 - HARP_SYNC_OFFSET_US;
-    #ifdef DEBUG
-    printf("harp time is: %llu [us]\r\n", curr_harp_us);
-    #endif
+    uint64_t curr_harp_us = uint64_t(sec) * 1'000'000 - HARP_SYNC_OFFSET_US;
     self->offset_us_64_ = ::time_us_64() - curr_harp_us;
     self->has_synced_ = true;
-    // Cleanup.
     self->new_timestamp_ = false;
-    restore_interrupts(interrupt_status);
+    #ifdef DEBUG
+    //printf("harp time: %llu [us] | offset: %lld\r\n", curr_harp_us, self->offset_us_64_);
+    #endif
+    // Cleanup.
+    //restore_interrupts(interrupt_status);
 }
 

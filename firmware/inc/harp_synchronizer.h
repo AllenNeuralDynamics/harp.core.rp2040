@@ -117,7 +117,7 @@ private:
     volatile uint8_t packet_index_;
     volatile bool new_timestamp_;
 
-    volatile uint64_t offset_us_64_;
+    volatile int64_t offset_us_64_;
 
     volatile bool has_synced_;
 /**
