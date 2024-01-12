@@ -16,7 +16,7 @@ Additionally, here are a few examples that use the RP2040 Harp Core as a submodu
 * [harp.device.lickety-split](https://github.com/AllenNeuralDynamics/harp.device.lickety-split)
 * [harp.device.sniff-detector](https://github.com/AllenNeuralDynamics/harp.device.sniff-detector)
 * [harp.device.treadmill](https://github.com/AllenNeuralDynamics/harp.device.treadmill)
-* [harp.device.ttl-io](https://github.com/AllenNeuralDynamics/harp.device.ttl-io)
+* [harp.device.cuttlefish](https://github.com/AllenNeuralDynamics/harp.device.cuttlefish)
 * [harp.pico.cam-trigger](https://github.com/AllenNeuralDynamics/harp.pico.cam-trigger)
 * [harp.pico.ephys-sync](https://github.com/AllenNeuralDynamics/harp.pico.ephys-sync)
 
