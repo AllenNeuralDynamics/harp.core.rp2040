@@ -174,14 +174,14 @@ public:
 /**
  * \brief true if the mute flag has been set in the R_OPERATION_CTRL register.
  */
-    static bool is_muted()
+    static inline bool is_muted()
     {return bool((self->regs.R_OPERATION_CTRL >> MUTE_RPL_OFFSET) & 0x01);}
 
 /**
  * \brief true if the "events enabled" flag has been set in the
  *  R_OPERATION_CTRL register.
  */
-    static bool events_enabled()
+    static inline bool events_enabled()
     {return (self->regs.R_OPERATION_CTRL & 0x03) == ACTIVE;}
 
 /**
@@ -192,7 +192,7 @@ public:
  *  external synchronizer is physically connected and operating and (2) this
  *  class instance has configured a synchronizer with set_synchronizer().
  */
-    static uint64_t harp_time_us_64()
+    static inline uint64_t harp_time_us_64()
     {return (self->sync_ == nullptr)?
                 time_us_64() - self->offset_us_64_:
                 self->sync_->time_us_64();}
@@ -205,10 +205,10 @@ public:
  *  external synchronizer is physically connected and operating and (2) this
  *  class instance has configured a synchronizer with set_synchronizer().
  */
-    static uint32_t harp_time_us_32()
-    {return (self->sync_ == nullptr)?
-                time_us_32() - uint32_t(self->offset_us_64_):
-                self->sync_->time_us_32();}
+    static inline uint32_t harp_time_us_32()
+    {return uint32_t(harp_time_us_64());} // FIXME: this should execute faster
+                                          // but truncating for speed involves
+                                          // checking a bunch of edge cases.
 
 /**
  * \brief convert harp time (in 64-bit microseconds) to local system time
@@ -220,7 +220,7 @@ public:
  *  the externally synchronized time.
  * \param harp_time_us the current time in microseconds
  */
-    static uint64_t harp_to_system_us_64(uint64_t harp_time_us)
+    static inline uint64_t harp_to_system_us_64(uint64_t harp_time_us)
     {return (self->sync_ == nullptr)?
                 harp_time_us + self->offset_us_64_:
                 self->sync_->harp_to_system_us_64(harp_time_us);}
@@ -235,7 +235,7 @@ public:
  *  the externally synchronized time.
  * \param harp_time_us the current time in microseconds
  */
-    static uint32_t harp_to_system_us_32(uint32_t harp_time_us)
+    static inline uint32_t harp_to_system_us_32(uint32_t harp_time_us)
     {return (self->sync_ == nullptr)?
                 harp_time_us + uint32_t(self->offset_us_64_):
                 self->sync_->harp_to_system_us_32(harp_time_us);}

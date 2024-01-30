@@ -58,7 +58,7 @@ public:
  * \warning this value is not monotonic and can change at any time if an
  *  external synchronizer is physically connected and operating.
  */
-    static uint64_t time_us_64()
+    static inline uint64_t time_us_64()
     {return ::time_us_64() - self->offset_us_64_;}
 
 /**
@@ -66,8 +66,10 @@ public:
  * \warning this value is not monotonic and can change at any time if an
  *  external synchronizer is physically connected and operating.
  */
-    static uint32_t time_us_32()
-    {return ::time_us_32() - uint32_t(self->offset_us_64_);}
+    static inline uint32_t time_us_32()
+    {return uint32_t(time_us_64());}    // FIXME: this should execute faster
+                                        // but truncating for speed involves
+                                        // checking a bunch of edge cases.
 
 /**
  * \brief convert harp time (in 64-bit microseconds) to local system time
@@ -76,7 +78,7 @@ public:
  *  local time domain, which is monotonic and unchanged by adjustments to
  *  the harp time.
  */
-    static uint64_t harp_to_system_us_64(uint64_t harp_time_us)
+    static inline uint64_t harp_to_system_us_64(uint64_t harp_time_us)
     {return harp_time_us + self->offset_us_64_;}
 
 /**
@@ -86,14 +88,14 @@ public:
  *  local time domain, which is monotonic and unchanged by adjustments to
  *  the harp time.
  */
-    static uint32_t harp_to_system_us_32(uint32_t harp_time_us)
+    static inline uint32_t harp_to_system_us_32(uint32_t harp_time_us)
     {return harp_time_us + uint32_t(self->offset_us_64_);}
 
 /**
  * \brief true if the synchronizer has received at least one external sync
  *  signal.
  */
-    static bool has_synced()
+    static inline bool has_synced()
     {return self->has_synced_;}
 
 private:
@@ -117,7 +119,7 @@ private:
     volatile uint8_t packet_index_;
     volatile bool new_timestamp_;
 
-    volatile int64_t offset_us_64_;
+    volatile uint64_t offset_us_64_;
 
     volatile bool has_synced_;
 /**

@@ -315,9 +315,8 @@ void HarpCore::update_timestamp_regs()
     // Note: R_TIMESTAMP_MICRO can only represent values up to 31249.
     // Note: Update microseconds first.
     uint64_t curr_total_us = harp_time_us_64();
-    uint32_t curr_total_us_32 = (uint32_t)curr_total_us; // truncate.
     // TODO: use divmod_u64u64_rem to do division with remainder once.
-    regs.R_TIMESTAMP_MICRO = uint16_t((curr_total_us_32%1000000UL)>>5);
+    regs.R_TIMESTAMP_MICRO = uint16_t((curr_total_us%1000000UL)>>5);
     regs.R_TIMESTAMP_SECOND = curr_total_us / 1000000ULL;
 }
 
