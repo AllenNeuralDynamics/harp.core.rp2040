@@ -136,7 +136,8 @@ public:
     static void write_to_read_only_reg_error(msg_t& msg);
 
 /**
- * \brief update local register data with the payload provided in the input msg.
+ * \brief update local (app or core) register data with the payload provided in
+ *  the input msg.
  */
     static inline void copy_msg_payload_to_register(msg_t& msg)
     {
