@@ -212,6 +212,15 @@ public:
                                           // checking a bunch of edge cases.
 
 /**
+ * \brief get the current elapsed seconds (32-bit) in "Harp" time.
+ */
+    static uint32_t harp_time_s()
+    {
+        self->update_timestamp_regs();
+        return self->regs.R_TIMESTAMP_SECOND;
+    }
+
+/**
  * \brief convert harp time (in 64-bit microseconds) to local system time
  *  (in 64-bit microseconds).
  * \details this utility function is useful for setting alarms in the device's
