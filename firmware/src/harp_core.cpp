@@ -314,10 +314,11 @@ void HarpCore::update_timestamp_regs()
     // timer register, which ticks every 1[us].
     // Note: R_TIMESTAMP_MICRO can only represent values up to 31249.
     // Note: Update microseconds first.
-    uint64_t curr_total_us = harp_time_us_64();
-    // TODO: use divmod_u64u64_rem to do division with remainder once.
-    regs.R_TIMESTAMP_MICRO = uint16_t((curr_total_us%1000000UL)>>5);
-    regs.R_TIMESTAMP_SECOND = curr_total_us / 1000000ULL;
+    uint64_t leftover_us;
+    uint32_t seconds = divmod_u64u64_rem(harp_time_us_64(), 1'000'000UL,
+                                         &leftover_us);
+    regs.R_TIMESTAMP_MICRO = uint16_t(leftover_us >> 5);
+    regs.R_TIMESTAMP_SECOND = seconds;
 }
 
 void HarpCore::read_timestamp_second(uint8_t reg_name)
@@ -331,10 +332,12 @@ void HarpCore::write_timestamp_second(msg_t& msg)
     const uint32_t& seconds = *((uint32_t*)msg.payload);
     // Replace the current number of elapsed seconds without altering the
     // number of elapsed microseconds.
-    // TODO: use divmod_u64u64_rem to do division with remainder once.
     uint64_t set_time_microseconds = uint64_t(seconds) * 1000000UL;
-    uint32_t current_microseconds = time_us_64() % 1000000ULL;
-    uint64_t new_harp_time_us = set_time_microseconds + current_microseconds;
+    uint64_t curr_microseconds;
+    uint32_t curr_seconds = divmod_u64u64_rem(time_us_64(), 1'000'000ULL,
+                                              &curr_microseconds);
+    //uint32_t current_microseconds = time_us_64() % 1000000ULL;
+    uint64_t new_harp_time_us = set_time_microseconds + curr_microseconds;
     // If synchronizer is attached, update the synchronizer's time.
     if (self->sync_ != nullptr)
         self->sync_->offset_us_64_ = time_us_64() - new_harp_time_us;
@@ -357,7 +360,7 @@ void HarpCore::write_timestamp_microsecond(msg_t& msg)
     const uint32_t msg_us = ((uint32_t)(*((uint16_t*)msg.payload))) << 5;
     // PICO implementation: replace the current number of elapsed microseconds
     // with the value received from the message.
-    uint64_t curr_total_s = time_us_64() / 1000000ULL; // integer division.
+    uint64_t curr_total_s  = div_u64u64(time_us_64(), 1'000'000ULL);
     uint64_t new_harp_time_us = curr_total_s + msg_us;
     // If synchronizer is attached, update the synchronizer's time.
     if (self->sync_ != nullptr)
