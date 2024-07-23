@@ -16,7 +16,9 @@ Registers::Registers(uint16_t who_am_i,
        .R_FW_VERSION_H = fw_version_major,
        .R_FW_VERSION_L = fw_version_minor,
        .R_OPERATION_CTRL = 0,
-       .R_SERIAL_NUMBER = serial_number}
+       .R_SERIAL_NUMBER = serial_number,
+       .R_UUID = {0} // all zeros.
+        }
 {
     strcpy((char*)regs_.R_DEVICE_NAME, name);
     strcpy((char*)regs_.R_TAG, (char*)tag);

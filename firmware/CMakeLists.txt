@@ -9,12 +9,6 @@ if(NOT DEFINED PICO_SDK_PATH)
              pico_sdk_init() must first be invoked.")
 endif()
 
-if(NOT DEFINED PICO_SDK_PATH)
-    message(WARNING
-            "COMMIT_ID variable is not defined.
-             TAG Register will not contain a valid project hash.")
-endif()
-
 # commented out for now. Unclear how to use this with the GUI.
 #option(DEBUG "If true, compile with added debug statements output to
 #              uart at 921600 baud" OFF)

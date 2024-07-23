@@ -40,6 +40,8 @@ HarpCore::HarpCore(uint16_t who_am_i,
     pico_unique_board_id_t unique_id;
     pico_get_unique_board_id(&unique_id);
     memcpy((void*)(&regs.R_UUID[8]), (void*)&(unique_id.id), sizeof(unique_id.id));
+#else
+#pragma warning("Harp Core Register UUID will not autodetected for this board.")
 #endif
 }
 
