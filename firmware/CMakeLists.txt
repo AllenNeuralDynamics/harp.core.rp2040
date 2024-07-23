@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.13)
-
 #uncomment to print incoming and outgoing harp message stats.
 #add_definitions(-DDEBUG_HARP_MSG_IN)
 #add_definitions(-DDEBUG_HARP_MSG_OUT)
@@ -8,6 +7,12 @@ if(NOT DEFINED PICO_SDK_PATH)
     message(FATAL_ERROR
             "PICO_SDK_PATH was not specified.
              pico_sdk_init() must first be invoked.")
+endif()
+
+if(NOT DEFINED PICO_SDK_PATH)
+    message(WARNING
+            "COMMIT_ID variable is not defined.
+             TAG Register will not contain a valid project hash.")
 endif()
 
 # commented out for now. Unclear how to use this with the GUI.

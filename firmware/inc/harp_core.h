@@ -12,6 +12,7 @@
 #include <hardware/structs/timer.h>
 #include <pico/divider.h> // for fast hardware division with remainder.
 #include <hardware/timer.h>
+#include <pico/unique_id.h>
 
 #define NO_PC_INTERVAL_US (3'000'000UL) // Threshold duration. If the connection
                                         // with the PC has been inactive for
@@ -45,7 +46,8 @@ protected: // protected, but not private, to enable derived class usage.
              uint8_t assembly_version,
              uint8_t harp_version_major, uint8_t harp_version_minor,
              uint8_t fw_version_major, uint8_t fw_version_minor,
-             uint16_t serial_number, const char name[]);
+             uint16_t serial_number, const char name[],
+             const uint8_t tag[]);
 
     ~HarpCore();
 
@@ -64,7 +66,8 @@ public:
                           uint8_t assembly_version,
                           uint8_t harp_version_major, uint8_t harp_version_minor,
                           uint8_t fw_version_major, uint8_t fw_version_minor,
-                          uint16_t serial_number, const char name[]);
+                          uint16_t serial_number, const char name[],
+                          const uint8_t tag[]);
 
     static inline HarpCore* self = nullptr; // pointer to the singleton instance.
     static HarpCore& instance() {return *self;} ///< returns the singleton.
@@ -459,7 +462,9 @@ private:
         {&HarpCore::read_reg_generic, &HarpCore::write_device_name},
         {&HarpCore::read_reg_generic, &HarpCore::write_serial_number},
         {&HarpCore::read_reg_generic, &HarpCore::write_clock_config},
-        {&HarpCore::read_reg_generic, &HarpCore::write_timestamp_offset}
+        {&HarpCore::read_reg_generic, &HarpCore::write_timestamp_offset},
+        {&HarpCore::read_reg_generic, &HarpCore::write_to_read_only_reg_error},
+        {&HarpCore::read_reg_generic, &HarpCore::write_to_read_only_reg_error},
     };
 };
 

@@ -5,7 +5,7 @@
 #include <core_reg_bits.h>
 #include <cstring>  // for strcpy
 
-static const uint8_t CORE_REG_COUNT = 16;
+static const uint8_t CORE_REG_COUNT = 18;
 
 #define APP_REG_START_ADDRESS (32)
 
@@ -52,7 +52,9 @@ enum RegName : uint8_t
     DEVICE_NAME = 12,
     SERIAL_NUMBER = 13,
     CLOCK_CONFIG = 14,
-    TIMESTAMP_OFFSET = 15
+    TIMESTAMP_OFFSET = 15,
+    UUID = 16,
+    TAG = 17,
 };
 
 
@@ -76,6 +78,8 @@ struct RegValues
     volatile uint16_t R_SERIAL_NUMBER;
     volatile uint8_t R_CLOCK_CONFIG;
     volatile uint8_t R_TIMESTAMP_OFFSET;
+    const uint8_t R_UUID[16];
+    const uint8_t R_TAG[8];
 };
 #pragma pack(pop)
 
@@ -94,7 +98,8 @@ struct Registers
                   uint8_t assembly_version,
                   uint8_t harp_version_major, uint8_t harp_version_minor,
                   uint8_t fw_version_major, uint8_t fw_version_minor,
-                  uint16_t serial_number, const char name[]);
+                  uint16_t serial_number, const char name[],
+                  const uint8_t tag[]);
         ~Registers();
 
     RegValues regs_;
@@ -118,7 +123,10 @@ struct Registers
      {(uint8_t*)&regs_.R_DEVICE_NAME,      sizeof(regs_.R_DEVICE_NAME),       U8},
      {(uint8_t*)&regs_.R_SERIAL_NUMBER,    sizeof(regs_.R_SERIAL_NUMBER),     U16},
      {(uint8_t*)&regs_.R_CLOCK_CONFIG,     sizeof(regs_.R_CLOCK_CONFIG),      U8},
-     {(uint8_t*)&regs_.R_TIMESTAMP_OFFSET, sizeof(regs_.R_TIMESTAMP_OFFSET),  U8}};
+     {(uint8_t*)&regs_.R_TIMESTAMP_OFFSET, sizeof(regs_.R_TIMESTAMP_OFFSET),  U8},
+     {(uint8_t*)&regs_.R_UUID, sizeof(regs_.R_UUID),  U8},
+     {(uint8_t*)&regs_.R_TAG, sizeof(regs_.R_TAG),  U8},
+    };
 
     // Syntactic Sugar. Make bitfields for certain registers easier to access.
     OperationCtrlBits& r_operation_ctrl_bits = *((OperationCtrlBits*)(&regs_.R_OPERATION_CTRL));
