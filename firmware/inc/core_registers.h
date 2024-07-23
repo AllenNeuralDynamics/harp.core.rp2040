@@ -78,8 +78,8 @@ struct RegValues
     volatile uint16_t R_SERIAL_NUMBER;
     volatile uint8_t R_CLOCK_CONFIG;
     volatile uint8_t R_TIMESTAMP_OFFSET;
-    const uint8_t R_UUID[16];
-    const uint8_t R_TAG[8];
+    uint8_t R_UUID[16];
+    uint8_t R_TAG[8];
 };
 #pragma pack(pop)
 
