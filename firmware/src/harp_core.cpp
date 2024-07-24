@@ -5,14 +5,15 @@ HarpCore& HarpCore::init(uint16_t who_am_i,
                          uint8_t assembly_version,
                          uint8_t harp_version_major, uint8_t harp_version_minor,
                          uint8_t fw_version_major, uint8_t fw_version_minor,
-                         uint16_t serial_number, const char name[])
+                         uint16_t serial_number, const char name[],
+                         const uint8_t tag[])
 {
     // Create the singleton instance using the private constructor.
     static HarpCore core(who_am_i, hw_version_major, hw_version_minor,
                          assembly_version,
                          harp_version_major, harp_version_minor,
                          fw_version_major, fw_version_minor, serial_number,
-                         name);
+                         name, tag);
     return core;
 }
 
@@ -21,10 +22,11 @@ HarpCore::HarpCore(uint16_t who_am_i,
                    uint8_t assembly_version,
                    uint8_t harp_version_major, uint8_t harp_version_minor,
                    uint8_t fw_version_major, uint8_t fw_version_minor,
-                   uint16_t serial_number, const char name[])
-:regs_{who_am_i, hw_version_major, hw_version_minor,assembly_version,
+                   uint16_t serial_number, const char name[],
+                   const uint8_t tag[])
+:regs_{who_am_i, hw_version_major, hw_version_minor, assembly_version,
        harp_version_major, harp_version_minor,
-       fw_version_major, fw_version_minor, serial_number, name},
+       fw_version_major, fw_version_minor, serial_number, name, tag},
  rx_buffer_index_{0}, total_bytes_read_{rx_buffer_index_}, new_msg_{false},
  set_visual_indicators_fn_{nullptr}, sync_{nullptr}, offset_us_64_{0},
  disconnect_handled_{false}, connect_handled_{false}
@@ -33,6 +35,14 @@ HarpCore::HarpCore(uint16_t who_am_i,
     if (self == nullptr)
         self = this;
     tusb_init();
+#if defined(PICO_RP2040)
+    // Populate Harp Core R_UUID with unique id from QSPI Flash.
+    pico_unique_board_id_t unique_id;
+    pico_get_unique_board_id(&unique_id);
+    memcpy((void*)(&regs.R_UUID[8]), (void*)&(unique_id.id), sizeof(unique_id.id));
+#else
+#pragma warning("Harp Core Register UUID will not autodetected for this board.")
+#endif
 }
 
 HarpCore::~HarpCore(){self = nullptr;}

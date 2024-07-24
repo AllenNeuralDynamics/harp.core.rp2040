@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.13)
-
 #uncomment to print incoming and outgoing harp message stats.
 #add_definitions(-DDEBUG_HARP_MSG_IN)
 #add_definitions(-DDEBUG_HARP_MSG_OUT)
