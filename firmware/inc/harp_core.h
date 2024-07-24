@@ -12,6 +12,7 @@
 #include <hardware/structs/timer.h>
 #include <pico/divider.h> // for fast hardware division with remainder.
 #include <hardware/timer.h>
+#include <pico/unique_id.h>
 
 #define NO_PC_INTERVAL_US (3'000'000UL) // Threshold duration. If the connection
                                         // with the PC has been inactive for
@@ -45,7 +46,8 @@ protected: // protected, but not private, to enable derived class usage.
              uint8_t assembly_version,
              uint8_t harp_version_major, uint8_t harp_version_minor,
              uint8_t fw_version_major, uint8_t fw_version_minor,
-             uint16_t serial_number, const char name[]);
+             uint16_t serial_number, const char name[],
+             const uint8_t tag[]);
 
     ~HarpCore();
 
@@ -64,7 +66,8 @@ public:
                           uint8_t assembly_version,
                           uint8_t harp_version_major, uint8_t harp_version_minor,
                           uint8_t fw_version_major, uint8_t fw_version_minor,
-                          uint16_t serial_number, const char name[]);
+                          uint16_t serial_number, const char name[],
+                          const uint8_t tag[]);
 
     static inline HarpCore* self = nullptr; // pointer to the singleton instance.
     static HarpCore& instance() {return *self;} ///< returns the singleton.
@@ -271,6 +274,22 @@ public:
     static void force_state(op_mode_t next_state)
     {self->update_state(true, next_state);}
 
+/**
+ * \brief set the 16 bytews in the R_UUID register. Any unspecified bytes will
+ *  be set to zero.
+ * Usage:
+ * \code
+ *  uint64_t uuid = 0xCAFE;
+ *  // This works as-is on little-endian systems.
+ *  HarpCore::set_uuid((uin8_t*)&uuid, sizeof(uuid));
+ * \endcode
+ */
+    static void set_uuid(uint8_t* uuid, size_t num_bytes, size_t offset = 0)
+    {
+        memset(self->regs.R_UUID, 0, sizeof(self->regs.R_UUID));
+        memcpy((void*)(&self->regs.R_UUID[offset]), (void*)uuid, num_bytes);
+    }
+
 protected:
 /**
  * \brief entry point for handling incoming harp messages to core registers.
@@ -316,7 +335,6 @@ protected:
 
     virtual const RegSpecs& address_to_app_reg_specs(uint8_t address)
     {return regs_.address_to_specs[0];} // should never happen.
-
 
 /**
  * \brief flag indicating whether or not a new message is in the #rx_buffer_.
@@ -459,7 +477,9 @@ private:
         {&HarpCore::read_reg_generic, &HarpCore::write_device_name},
         {&HarpCore::read_reg_generic, &HarpCore::write_serial_number},
         {&HarpCore::read_reg_generic, &HarpCore::write_clock_config},
-        {&HarpCore::read_reg_generic, &HarpCore::write_timestamp_offset}
+        {&HarpCore::read_reg_generic, &HarpCore::write_timestamp_offset},
+        {&HarpCore::read_reg_generic, &HarpCore::write_to_read_only_reg_error},
+        {&HarpCore::read_reg_generic, &HarpCore::write_to_read_only_reg_error},
     };
 };
 

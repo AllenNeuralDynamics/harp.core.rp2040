@@ -33,6 +33,7 @@ private:
              uint8_t harp_version_major, uint8_t harp_version_minor,
              uint8_t fw_version_major, uint8_t fw_version_minor,
              uint16_t serial_number, const char name[],
+             const uint8_t tag[],
              void* app_reg_values, RegSpecs* app_reg_specs,
              RegFnPair* reg_fns, size_t app_reg_count,
              void (* update_fn)(void), void (* reset_fn)(void));
@@ -53,6 +54,7 @@ public:
                           uint8_t harp_version_major, uint8_t harp_version_minor,
                           uint8_t fw_version_major, uint8_t fw_version_minor,
                           uint16_t serial_number, const char name[],
+                          const uint8_t tag[],
                           void* app_reg_values, RegSpecs* app_reg_specs,
                           RegFnPair* reg_fns, size_t app_reg_count,
                           void (* update_fn)(void), void (*reset_fn)(void));
