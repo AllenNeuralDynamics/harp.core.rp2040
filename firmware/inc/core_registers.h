@@ -16,8 +16,10 @@ static const uint8_t CORE_REG_COUNT = 18;
 #define OPLEDEN_OFFSET (6)
 #define ALIVE_EN_OFFSET (7)
 
-// RESET_DEF bitfields
-#define RST_DEF_OFFSET (0)
+// RESET_DEV bitfields
+#define RST_DEV_OFFSET (0)
+#define BOOT_DEF_OFFSET (6)
+#define BOOT_EE_OFFSET (7)
 
 /**
  * \brief enum for easier interpretation of the OP_MODE bitfield in the
