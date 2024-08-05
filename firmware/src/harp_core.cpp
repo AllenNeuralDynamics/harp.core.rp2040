@@ -324,11 +324,17 @@ void HarpCore::update_timestamp_regs()
     // timer register, which ticks every 1[us].
     // Note: R_TIMESTAMP_MICRO can only represent values up to 31249.
     // Note: Update microseconds first.
-    uint64_t leftover_us;
-    uint32_t seconds = divmod_u64u64_rem(harp_time_us_64(), 1'000'000UL,
-                                         &leftover_us);
-    regs.R_TIMESTAMP_MICRO = uint16_t(leftover_us >> 5);
-    regs.R_TIMESTAMP_SECOND = seconds;
+#if defined(PICO_RP2040)
+    uint64_t leftover_microseconds;
+    uint64_t curr_seconds = divmod_u64u64_rem(harp_time_us_64(), 1'000'000UL,
+                                              &leftover_microseconds);
+    regs.R_TIMESTAMP_MICRO = uint16_t(leftover_microseconds >> 5);
+    regs.R_TIMESTAMP_SECOND = uint32_t(curr_seconds); // will not overflow.
+#else
+    uint64_t curr_microseconds = harp_time_us_64();
+    regs.R_TIMESTAMP_MICRO = uint16_t((curr_microseconds % 1000000UL)>>5);
+    regs.R_TIMESTAMP_SECOND = curr_microseconds / 1000000ULL;
+#endif
 }
 
 void HarpCore::read_timestamp_second(uint8_t reg_name)
@@ -343,10 +349,13 @@ void HarpCore::write_timestamp_second(msg_t& msg)
     // Replace the current number of elapsed seconds without altering the
     // number of elapsed microseconds.
     uint64_t set_time_microseconds = uint64_t(seconds) * 1000000UL;
+#if defined(PICO_RP2040)
     uint64_t curr_microseconds;
-    uint32_t curr_seconds = divmod_u64u64_rem(time_us_64(), 1'000'000ULL,
+    uint64_t curr_seconds = divmod_u64u64_rem(time_us_64(), 1'000'000ULL,
                                               &curr_microseconds);
-    //uint32_t current_microseconds = time_us_64() % 1000000ULL;
+#else
+    uint64_t curr_microseconds = time_us_64() % 1000000ULL;
+#endif
     uint64_t new_harp_time_us = set_time_microseconds + curr_microseconds;
     // If synchronizer is attached, update the synchronizer's time.
     if (self->sync_ != nullptr)
@@ -370,7 +379,12 @@ void HarpCore::write_timestamp_microsecond(msg_t& msg)
     const uint32_t msg_us = ((uint32_t)(*((uint16_t*)msg.payload))) << 5;
     // PICO implementation: replace the current number of elapsed microseconds
     // with the value received from the message.
+
+#if defined(PICO_RP2040)
     uint64_t curr_total_s  = div_u64u64(time_us_64(), 1'000'000ULL);
+#else
+    uint64_t curr_total_s  = time_us_64() / 1'000'000ULL;
+#endif
     uint64_t new_harp_time_us = curr_total_s + msg_us;
     // If synchronizer is attached, update the synchronizer's time.
     if (self->sync_ != nullptr)
