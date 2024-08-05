@@ -13,6 +13,7 @@
 #include <pico/divider.h> // for fast hardware division with remainder.
 #include <hardware/timer.h>
 #include <pico/unique_id.h>
+#include <pico/bootrom.h>
 
 #define NO_PC_INTERVAL_US (3'000'000UL) // Threshold duration. If the connection
                                         // with the PC has been inactive for
@@ -447,7 +448,7 @@ private:
     static void write_timestamp_second(msg_t& msg);
     static void write_timestamp_microsecond(msg_t& msg);
     static void write_operation_ctrl(msg_t& msg);
-    static void write_reset_def(msg_t& msg);
+    static void write_reset_dev(msg_t& msg);
     static void write_device_name(msg_t& msg);
     static void write_serial_number(msg_t& msg);
     static void write_clock_config(msg_t& msg);
@@ -473,7 +474,7 @@ private:
         {&HarpCore::read_timestamp_second, &HarpCore::write_timestamp_second},
         {&HarpCore::read_timestamp_microsecond, &HarpCore::write_timestamp_microsecond},
         {&HarpCore::read_reg_generic, &HarpCore::write_operation_ctrl},
-        {&HarpCore::read_reg_generic, &HarpCore::write_reset_def},
+        {&HarpCore::read_reg_generic, &HarpCore::write_reset_dev},
         {&HarpCore::read_reg_generic, &HarpCore::write_device_name},
         {&HarpCore::read_reg_generic, &HarpCore::write_serial_number},
         {&HarpCore::read_reg_generic, &HarpCore::write_clock_config},

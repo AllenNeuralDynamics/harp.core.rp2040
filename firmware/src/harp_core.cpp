@@ -41,7 +41,7 @@ HarpCore::HarpCore(uint16_t who_am_i,
     pico_get_unique_board_id(&unique_id);
     memcpy((void*)(&regs.R_UUID[8]), (void*)&(unique_id.id), sizeof(unique_id.id));
 #else
-#pragma warning("Harp Core Register UUID will not autodetected for this board.")
+#pragma warning("Harp Core Register UUID not autodetected for this board.")
 #endif
 }
 
@@ -416,17 +416,25 @@ void HarpCore::write_operation_ctrl(msg_t& msg)
     }
 }
 
-void HarpCore::write_reset_def(msg_t& msg)
+void HarpCore::write_reset_dev(msg_t& msg)
 {
     uint8_t& write_byte = *((uint8_t*)msg.payload);
     // R_RESET_DEV Register state does not need to be updated since writing to
     // it only triggers behavior.
     // Tease out relevant flags.
-    const bool& rst_def_bit = bool((write_byte >> RST_DEF_OFFSET) & 1u);
+    const bool& rst_dev_bit = bool((write_byte >> RST_DEV_OFFSET) & 1u);
+    const bool& boot_def_bit = bool((write_byte >> BOOT_DEF_OFFSET) & 1u);
+    const bool& boot_ee_bit = bool((write_byte >> BOOT_EE_OFFSET) & 1u);
     // Issue a harp reply only if we aren't resetting.
     // TODO: unclear if this is the appropriate behavior.
     // Reset if specified to do so.
-    if (rst_def_bit)
+#if defined(PICO_RP2040)
+    if (boot_def_bit && boot_ee_bit)
+        reset_usb_boot(0,0);
+#else
+#pragma warning("Boot-to-DFU-mode via Harp Protocol not supported for this device.")
+#endif
+    if (rst_dev_bit)
     {
         // Reset core state machine and app.
         self->regs_.r_operation_ctrl_bits.OP_MODE = STANDBY;
