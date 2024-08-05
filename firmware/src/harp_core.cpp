@@ -41,7 +41,7 @@ HarpCore::HarpCore(uint16_t who_am_i,
     pico_get_unique_board_id(&unique_id);
     memcpy((void*)(&regs.R_UUID[8]), (void*)&(unique_id.id), sizeof(unique_id.id));
 #else
-#pragma warning("Harp Core Register UUID will not autodetected for this board.")
+#pragma warning("Harp Core Register UUID not autodetected for this board.")
 #endif
 }
 
@@ -428,6 +428,8 @@ void HarpCore::write_reset_dev(msg_t& msg)
 #if defined(PICO_RP2040)
     if (boot_def_bit && boot_ee_bit)
         reset_usb_boot(0,0);
+#else
+#pragma warning("Boot-to-DFU-mode via Harp Protocol not supported for this device.")
 #endif
     if (rst_dev_bit)
     {
