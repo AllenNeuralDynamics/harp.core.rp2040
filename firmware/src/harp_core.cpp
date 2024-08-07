@@ -437,13 +437,12 @@ void HarpCore::write_reset_dev(msg_t& msg)
     // it only triggers behavior.
     // Tease out relevant flags.
     const bool& rst_dev_bit = bool((write_byte >> RST_DEV_OFFSET) & 1u);
-    const bool& boot_def_bit = bool((write_byte >> BOOT_DEF_OFFSET) & 1u);
-    const bool& boot_ee_bit = bool((write_byte >> BOOT_EE_OFFSET) & 1u);
+    const bool& reset_dfu_bit = bool((write_byte >> RST_DFU_OFFSET) & 1u);
     // Issue a harp reply only if we aren't resetting.
     // TODO: unclear if this is the appropriate behavior.
     // Reset if specified to do so.
 #if defined(PICO_RP2040)
-    if (boot_def_bit && boot_ee_bit)
+    if (reset_dfu_bit)
         reset_usb_boot(0,0);
 #else
 #pragma warning("Boot-to-DFU-mode via Harp Protocol not supported for this device.")

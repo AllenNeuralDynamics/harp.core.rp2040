@@ -18,6 +18,7 @@ static const uint8_t CORE_REG_COUNT = 18;
 
 // RESET_DEV bitfields
 #define RST_DEV_OFFSET (0)
+#define RST_DFU_OFFSET (5)
 #define BOOT_DEF_OFFSET (6)
 #define BOOT_EE_OFFSET (7)
 
