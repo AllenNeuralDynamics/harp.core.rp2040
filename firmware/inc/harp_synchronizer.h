@@ -95,7 +95,7 @@ public:
  * \brief true if the synchronizer has received at least one external sync
  *  signal.
  */
-    static inline bool has_synced()
+    static inline bool is_synced()
     {return self->has_synced_;}
 
 private:

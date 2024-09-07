@@ -19,7 +19,8 @@
                                         // with the PC has been inactive for
                                         // this duration, op mode should switch
                                         // to IDLE.
-#define HEARTBEAT_INTERVAL_US (1'000'000UL)
+#define HEARTBEAT_ACTIVE_INTERVAL_US (1'000'000UL)
+#define HEARTBEAT_STANDBY_INTERVAL_US (3'000'000UL)
 
 // Create a typedef to simplify syntax for array of static function ptrs.
 typedef void (*read_reg_fn)(uint8_t reg);
@@ -183,6 +184,16 @@ public:
     {return bool((self->regs.R_OPERATION_CTRL >> MUTE_RPL_OFFSET) & 0x01);}
 
 /**
+ * \brief
+ */
+    static inline bool is_synced()
+    {
+        return (self->sync_ == nullptr)?
+            false:
+            self->sync_->is_synced();
+    }
+
+/**
  * \brief true if the "events enabled" flag has been set in the
  *  R_OPERATION_CTRL register.
  */
@@ -211,16 +222,18 @@ public:
  *  class instance has configured a synchronizer with set_synchronizer().
  */
     static inline uint32_t harp_time_us_32()
-    {return uint32_t(harp_time_us_64());} // FIXME: this should execute faster
-                                          // but truncating for speed involves
-                                          // checking a bunch of edge cases.
+    {return uint32_t(harp_time_us_64());} // FIXME: this should be rewritten to
+                                          // execute faster but truncating for
+                                          // speed involves checking a bunch
+                                          // of edge cases.
 
 /**
- * \brief get the current elapsed seconds (32-bit) in "Harp" time.
+ * \brief get the current elapsed seconds in "Harp" time.
+ * \note this fn is computed from underlying 64-bit time representation.
  */
     static uint32_t harp_time_s()
     {
-        self->update_timestamp_regs();
+        self->update_timestamp_regs(); // calls harp_time_us_64() internally.
         return self->regs.R_TIMESTAMP_SECOND;
     }
 
@@ -385,6 +398,12 @@ private:
     uint32_t next_heartbeat_time_us_;
 
 /**
+ * \brief the current interval at which the \p next_neartbeat_time_us_ is being
+ * updated.
+ */
+    uint32_t heartbeat_interval_us_;
+
+/**
  * \brief last time device detects no connection with the PC in microseconds.
  * \note only valid if Op Mode is not in STANDBY mode.
  */
@@ -401,6 +420,12 @@ private:
  *  been handled.
  */
     bool connect_handled_;
+
+/**
+ * \brief true if the device has synchronized and all consequential activity
+ *  has been handled.
+ */
+    bool sync_handled_;
 
 /**
  * \brief Read incoming bytes from the USB serial port. Does not block.
