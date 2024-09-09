@@ -184,7 +184,11 @@ public:
     {return bool((self->regs.R_OPERATION_CTRL >> MUTE_RPL_OFFSET) & 0x01);}
 
 /**
- * \brief
+ * \brief true if the device is synchronized via external CLKIN input.
+ * \details true if the device has received and handled at least one
+ *  synchronization signal from its external CLKIN input. As implemented, this
+ *  function will never return false after synchronizing at least once, but
+ *  that may change later.
  */
     static inline bool is_synced()
     {
