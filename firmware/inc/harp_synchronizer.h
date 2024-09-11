@@ -11,7 +11,7 @@
 #include <cstdio> // for printf
 #endif
 
-#define HARP_SYNC_BAUDRATE (100000)
+#define HARP_SYNC_BAUDRATE (100000UL)
 #define HARP_SYNC_DATA_BITS (8)
 #define HARP_SYNC_STOP_BITS (1)
 #define HARP_SYNC_PARITY (UART_PARITY_NONE)
@@ -95,7 +95,7 @@ public:
  * \brief true if the synchronizer has received at least one external sync
  *  signal.
  */
-    static inline bool has_synced()
+    static inline bool is_synced()
     {return self->has_synced_;}
 
 private:
