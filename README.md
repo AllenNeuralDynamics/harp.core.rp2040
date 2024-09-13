@@ -93,6 +93,12 @@ Native packages exist in Bonsai for communicating with devices that speak Harp p
 For more information on reading data or writing commands to your custom new harp device, see the [Harp Tech Bonsai notes](https://harp-tech.org/articles/operators.html).
 
 ---
+# Power Usage 
+* It is possible to *just* use the `HarpSynchronizer` or *just* use the `HarpCApp` as standalone entities.
+* Several utility functions to convert betweeen local and system time exist
+  * if events from *Harp Time* need to be scheduled in *system time*.
+  * if events in system time need to be timestamped in *Harp time*.
+---
 # Developer Notes
 
 ### Debugging with printf
