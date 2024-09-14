@@ -151,13 +151,53 @@ public:
     }
 
 /**
- * \brief Send a Harp-compliant timestamped reply message for the specified
- *  core or app register.
+ * \brief Construct and send a Harp-compliant timestamped reply message from
+ *  provided arguments.
+ * \note this function is static such that we can write functions that invoke it
+ *  before instantiating the HarpCore singleton.
+ * \note Calls `tud_task()`.
+ * \param reply_type `READ`, `WRITE`, `EVENT`, `READ_ERROR`, or `WRITE_ERROR` enum.
+ * \param reg_name address to mark the origin point of the data.
+ * \param data pointer to payload content of the data.
+ * \param num_bytes `sizeof(data)`
+ * \param payload_type `U8`, `S8`, `U16`, `U32`, `U64`, `S64`, or `Float` enum.
+ * \param harp_time_us the harp time (in microseconds) to timestamp onto the
+ *  outgoing message.
+ */
+    static void send_harp_reply(msg_type_t reply_type, uint8_t reg_name,
+                                const volatile uint8_t* data, uint8_t num_bytes,
+                                reg_type_t payload_type, uint64_t harp_time_us);
+
+/**
+ * \brief Construct and send a Harp-compliant timestamped reply message from
+ *  provided arguments. Timestamp is generated automatically at the time this
+ *  function is called.
+ * \note this function is static such that we can write functions that invoke it
+ *  before instantiating the HarpCore singleton.
+ * \note Calls `tud_task()`.
+ * \param reply_type `READ`, `WRITE`, `EVENT`, `READ_ERROR`, or `WRITE_ERROR` enum.
+ * \param reg_name address to mark the origin point of the data.
+ * \param data pointer to payload content of the data.
+ * \param num_bytes `sizeof(data)`
+ * \param payload_type `U8`, `S8`, `U16`, `U32`, `U64`, `S64`, or `Float` enum.
+ */
+    static inline void send_harp_reply(msg_type_t reply_type, uint8_t reg_name,
+                                       const volatile uint8_t* data,
+                                       uint8_t num_bytes,
+                                       reg_type_t payload_type)
+    {return send_harp_reply(reply_type, reg_name, data, num_bytes, payload_type,
+                            harp_time_us_64());}
+
+/**
+ * \brief Construct and send a Harp-compliant timestamped reply message where
+ *  payload data is written from the specified register.
  * \details this function will lookup the particular core-or-app register's
  *  specs for the provided address and construct a reply based on those specs.
  * \note this function is static such that we can write functions that invoke it
  *  before instantiating the HarpCore singleton.
- * \note Calls tud_task().
+ * \note Calls `tud_task()`.
+ * \param reply_type `READ`, `WRITE`, `EVENT`, `READ_ERROR`, or `WRITE_ERROR` enum.
+ * \param reg_name address to mark the origin point of the data.
  */
     static inline void send_harp_reply(msg_type_t reply_type, uint8_t reg_name)
     {
@@ -167,15 +207,24 @@ public:
     }
 
 /**
- * \brief Construct and send a Harp-compliant timestamped reply message from
- *  provided arguments.
+ * \brief Send a Harp-compliant reply with a specific timestamp.
  * \note this function is static such that we can write functions that invoke it
  *  before instantiating the HarpCore singleton.
- * \note Calls tud_task().
+ * \note Calls `tud_task()`.
+ * \param reply_type `READ`, `WRITE`, `EVENT`, `READ_ERROR`, or `WRITE_ERROR` enum.
+ * \param reg_name address to mark the origin point of the data.
+ * \param harp_time_us the harp time (in microseconds) to timestamp onto the
+ *  outgoing message.
  */
-    static void send_harp_reply(msg_type_t reply_type, uint8_t reg_name,
-                                const volatile uint8_t* data, uint8_t num_bytes,
-                                reg_type_t payload_type);
+    static inline void send_harp_reply(msg_type_t reply_type, uint8_t reg_name,
+                                       uint64_t harp_time_us)
+    {
+        const RegSpecs& specs = self->reg_address_to_specs(reg_name);
+        send_harp_reply(reply_type, reg_name, specs.base_ptr, specs.num_bytes,
+                        specs.payload_type, harp_time_us);
+    }
+
+
 
 /**
  * \brief true if the mute flag has been set in the R_OPERATION_CTRL register.
@@ -213,27 +262,12 @@ public:
  *  class instance has configured a synchronizer with set_synchronizer().
  */
     static inline uint64_t harp_time_us_64()
-    {return (self->sync_ == nullptr)?
-                time_us_64() - self->offset_us_64_:
-                self->sync_->time_us_64();}
-
-/**
- * \brief get the total elapsed microseconds (32-bit) in "Harp" time.
- * \details  Internally, an offset is tracked and updated where
- *  \f$t_{Harp} = t_{local} - t_{offset} \f$
- * \warning this value is not monotonic and can change at any time if (1) an
- *  external synchronizer is physically connected and operating and (2) this
- *  class instance has configured a synchronizer with set_synchronizer().
- */
-    static inline uint32_t harp_time_us_32()
-    {return uint32_t(harp_time_us_64());} // FIXME: this should be rewritten to
-                                          // execute faster but truncating for
-                                          // speed involves checking a bunch
-                                          // of edge cases.
+    {return system_to_harp_us_64(time_us_64());}
 
 /**
  * \brief get the current elapsed seconds in "Harp" time.
- * \note this fn is computed from underlying 64-bit time representation.
+ * \note the returned seconds are rounded down to the most recent second that
+ *  has elapsed.
  */
     static uint32_t harp_time_s()
     {
@@ -266,10 +300,37 @@ public:
  *  the externally synchronized time.
  * \param harp_time_us the current time in microseconds
  */
-    static inline uint32_t harp_to_system_us_32(uint32_t harp_time_us)
+    static inline uint32_t harp_to_system_us_32(uint64_t harp_time_us)
+    {return uint32_t(harp_to_system_us_64(harp_time_us));}
+
+/**
+ * \brief convert system time (in 64-bit microseconds) to local system time
+ *  (in 64-bit microseconds).
+ * \details this utility function is useful for timestamping events in the
+ *  local time domain and then calculating when they happened in Harp time.
+ * \note If the synchronizer is attached, the conversion will be in referenced
+ *  to the synchronized time.
+ * \note A `system_to_harp_us_32()` command does not exist because Harp time
+ *  is only available in 64-bit time.
+ * \param system_time_us the current system time in microseconds
+ */
+    static inline uint64_t system_to_harp_us_64(uint64_t system_time_us)
     {return (self->sync_ == nullptr)?
-                harp_time_us + uint32_t(self->offset_us_64_):
-                self->sync_->harp_to_system_us_32(harp_time_us);}
+                system_time_us - self->offset_us_64_:
+                self->sync_->system_to_harp_us_64(system_time_us);}
+
+/**
+ * \brief Override the current Harp time with a specific time.
+ * \note useful if a separate entity besides the synchronizer input jack
+ *  needs to set the time (i.e: specifying the time over Harp protocol by
+ *  writing to timestamp registers).
+ * \note If a synchronizer is attached, this function will override the
+ *  synchronizer's time also.
+ */
+    static inline void set_harp_time_us_64(uint64_t harp_time_us)
+    {if (self->sync_ != nullptr)
+        self->sync_->set_harp_time_us_64(harp_time_us);
+     self->offset_us_64_ = time_us_64() - harp_time_us;}
 
 /**
  * \brief attach a synchronizer. If the synchronizer is attached, then calls to
@@ -450,10 +511,17 @@ private:
 
 
 /**
- * \brief move the current CPU time to the timestamp registers.
+ * \brief Write the current Harp time to the timestamp registers.
  * \warning must be called before timestamp registers are read.
  */
-    void update_timestamp_regs();
+    static inline void update_timestamp_regs()
+    {return set_timestamp_regs(harp_time_us_64());}
+
+
+/**
+ * \brief Write the a specified Harp time to the timestamp registers.
+ */
+    static void set_timestamp_regs(uint64_t harp_time_us);
 
 /**
  * \brief return a reference to the specified core or app register's specs used
@@ -474,8 +542,19 @@ private:
     // write handler function per core register. Handles write
     // operations to that register.
     // Note: these all need to have the same function signature.
+
+/**
+ * \brief Handle writing to the `R_TIMESTAMP_SECOND` register and update the
+ *  device's Harp time to reflect the seconds written to this register.
+ */
     static void write_timestamp_second(msg_t& msg);
+
+/**
+ * \brief Handle writing to the `R_TIMESTAMP_MICROSECOND` register and update
+ *  the device's Harp time to reflect the microseconds written to this register.
+ */
     static void write_timestamp_microsecond(msg_t& msg);
+
     static void write_operation_ctrl(msg_t& msg);
     static void write_reset_dev(msg_t& msg);
     static void write_device_name(msg_t& msg);
