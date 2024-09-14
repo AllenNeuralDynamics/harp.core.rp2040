@@ -110,8 +110,8 @@ public:
  *  local time domain, which is monotonic and unchanged by adjustments to
  *  the harp time.
  */
-    static inline uint32_t harp_to_system_us_32(uint32_t harp_time_us)
-    {return harp_time_us + uint32_t(self->offset_us_64_);}
+    static inline uint32_t harp_to_system_us_32(uint64_t harp_time_us)
+    {return uint32_t(harp_to_system_us_64(harp_time_us));}
 
 /**
  * \brief true if the synchronizer has received at least one external sync
