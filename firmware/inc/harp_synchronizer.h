@@ -11,7 +11,7 @@
 #include <cstdio> // for printf
 #endif
 
-#define HARP_SYNC_BAUDRATE (100000UL)
+#define HARP_SYNC_BAUDRATE (100'000UL)
 #define HARP_SYNC_DATA_BITS (8)
 #define HARP_SYNC_STOP_BITS (1)
 #define HARP_SYNC_PARITY (UART_PARITY_NONE)
@@ -54,12 +54,34 @@ public:
     static HarpSynchronizer& instance(){return *self;}
 
 /**
+ * \brief convert system time (in 64-bit microseconds) to local system time
+ *  (in 64-bit microseconds)
+ * \details this utility function is useful for timestamping events in the
+ *  local time domain and then calculating when they happened in Harp time.
+ * \note if the device is unsynchronized (i.e: offset = 0), the returned time
+ *  will be in local system time.
+ */
+    static inline uint64_t system_to_harp_us_64(uint64_t system_time_us)
+    {return system_time_us - self->offset_us_64_;}
+
+/**
+ * \brief Override the current Harp time with a specific time.
+ * \note useful if a separate entity besides the synchronizer input jack
+ *  needs to set the time (i.e: specifying the time over Harp protocol by
+ *  writing to timestamp registers).
+ */
+    static inline void set_harp_time_us_64(uint64_t harp_time_us)
+    {self->offset_us_64_ = ::time_us_64() - harp_time_us;}
+
+/**
  * \brief get the total elapsed microseconds (64-bit) in "Harp" time.
  * \warning this value is not monotonic and can change at any time if an
  *  external synchronizer is physically connected and operating.
+ * \note if the device is unsynchronized (i.e: offset = 0), the returned time
+ *  will be in local system time.
  */
     static inline uint64_t time_us_64()
-    {return ::time_us_64() - self->offset_us_64_;}
+    {return system_to_harp_us_64(::time_us_64());}
 
 /**
  * \brief get the total elapsed microseconds (32-bit) in "Harp" time.
@@ -88,8 +110,8 @@ public:
  *  local time domain, which is monotonic and unchanged by adjustments to
  *  the harp time.
  */
-    static inline uint32_t harp_to_system_us_32(uint32_t harp_time_us)
-    {return harp_time_us + uint32_t(self->offset_us_64_);}
+    static inline uint32_t harp_to_system_us_32(uint64_t harp_time_us)
+    {return uint32_t(harp_to_system_us_64(harp_time_us));}
 
 /**
  * \brief true if the synchronizer has received at least one external sync
