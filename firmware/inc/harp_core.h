@@ -269,7 +269,7 @@ public:
  * \note the returned seconds are rounded down to the most recent second that
  *  has elapsed.
  */
-    static uint32_t harp_time_s()
+    static inline uint32_t harp_time_s()
     {
         self->update_timestamp_regs(); // calls harp_time_us_64() internally.
         return self->regs.R_TIMESTAMP_SECOND;
