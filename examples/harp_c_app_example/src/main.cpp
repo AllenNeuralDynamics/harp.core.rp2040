@@ -65,6 +65,7 @@ HarpCApp& app = HarpCApp::init(who_am_i, hw_version_major, hw_version_minor,
                                harp_version_major, harp_version_minor,
                                fw_version_major, fw_version_minor,
                                serial_number, "Example C App",
+                               (const uint8_t*)GIT_HASH, // in CMakeLists.txt.
                                &app_regs, app_reg_specs,
                                reg_handler_fns, reg_count, update_app_state,
                                app_reset);

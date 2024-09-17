@@ -1,4 +1,8 @@
 cmake_minimum_required(VERSION 3.13)
+find_package(Git REQUIRED)
+execute_process(COMMAND "${GIT_EXECUTABLE}" rev-parse --short HEAD OUTPUT_VARIABLE COMMIT_ID OUTPUT_STRIP_TRAILING_WHITESPACE)
+message(STATUS "Computed Git Hash: ${COMMIT_ID}")
+add_definitions(-DGIT_HASH="${COMMIT_ID}") # Usable in source code.
 
 #add_definitions(-DDEBUG) # Uncomment for debugging
 
