@@ -1,10 +1,10 @@
 #ifndef HARP_CORE_H
 #define HARP_CORE_H
+#include "harp_message.h"
+#include "core_registers.h"
+#include "harp_synchronizer.h"
+#include "arm_regs.h"
 #include <stdint.h>
-#include <harp_message.h>
-#include <core_registers.h>
-#include <harp_synchronizer.h>
-#include <arm_regs.h>
 #include <cstring> // for memcpy
 #include <tusb.h>
 

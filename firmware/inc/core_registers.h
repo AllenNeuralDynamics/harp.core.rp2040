@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <reg_types.h>
 #include <core_reg_bits.h>
-#include <cstring>  // for strcpy
+#include <string.h>  // for strcpy
 
 static const uint8_t CORE_REG_COUNT = 18;
 
@@ -90,7 +90,7 @@ struct RegSpecs
 {
     volatile uint8_t* const base_ptr;
     const uint8_t num_bytes;
-    const reg_type_t payload_type;
+    const RegType payload_type;
 };
 
 struct Registers
@@ -111,24 +111,24 @@ struct Registers
     //  so we can't index into it directly by enum.
     // TODO: consider generating this table statically with a template.
     const RegSpecs address_to_specs[CORE_REG_COUNT] =
-    {{(uint8_t*)&regs_.R_WHO_AM_I,         sizeof(regs_.R_WHO_AM_I),          U16},
-     {(uint8_t*)&regs_.R_HW_VERSION_H,     sizeof(regs_.R_HW_VERSION_H),      U8},
-     {(uint8_t*)&regs_.R_HW_VERSION_L,     sizeof(regs_.R_HW_VERSION_L),      U8},
-     {(uint8_t*)&regs_.R_ASSEMBLY_VERSION, sizeof(regs_.R_ASSEMBLY_VERSION),  U8},
-     {(uint8_t*)&regs_.R_HARP_VERSION_H,   sizeof(regs_.R_HARP_VERSION_H),    U8},
-     {(uint8_t*)&regs_.R_HARP_VERSION_L,   sizeof(regs_.R_HW_VERSION_L),      U8},
-     {(uint8_t*)&regs_.R_FW_VERSION_H,     sizeof(regs_.R_FW_VERSION_H),      U8},
-     {(uint8_t*)&regs_.R_FW_VERSION_L,     sizeof(regs_.R_FW_VERSION_L),      U8},
-     {(uint8_t*)&regs_.R_TIMESTAMP_SECOND, sizeof(regs_.R_TIMESTAMP_SECOND),  U32},
-     {(uint8_t*)&regs_.R_TIMESTAMP_MICRO,  sizeof(regs_.R_TIMESTAMP_MICRO),   U16},
-     {(uint8_t*)&regs_.R_OPERATION_CTRL,   sizeof(regs_.R_OPERATION_CTRL),    U8},
-     {(uint8_t*)&regs_.R_RESET_DEF,        sizeof(regs_.R_RESET_DEF),         U8},
-     {(uint8_t*)&regs_.R_DEVICE_NAME,      sizeof(regs_.R_DEVICE_NAME),       U8},
-     {(uint8_t*)&regs_.R_SERIAL_NUMBER,    sizeof(regs_.R_SERIAL_NUMBER),     U16},
-     {(uint8_t*)&regs_.R_CLOCK_CONFIG,     sizeof(regs_.R_CLOCK_CONFIG),      U8},
-     {(uint8_t*)&regs_.R_TIMESTAMP_OFFSET, sizeof(regs_.R_TIMESTAMP_OFFSET),  U8},
-     {(uint8_t*)&regs_.R_UUID, sizeof(regs_.R_UUID),  U8},
-     {(uint8_t*)&regs_.R_TAG, sizeof(regs_.R_TAG),  U8},
+    {{(uint8_t*)&regs_.R_WHO_AM_I,         sizeof(regs_.R_WHO_AM_I),          RegType::U16},
+     {(uint8_t*)&regs_.R_HW_VERSION_H,     sizeof(regs_.R_HW_VERSION_H),      RegType::U8},
+     {(uint8_t*)&regs_.R_HW_VERSION_L,     sizeof(regs_.R_HW_VERSION_L),      RegType::U8},
+     {(uint8_t*)&regs_.R_ASSEMBLY_VERSION, sizeof(regs_.R_ASSEMBLY_VERSION),  RegType::U8},
+     {(uint8_t*)&regs_.R_HARP_VERSION_H,   sizeof(regs_.R_HARP_VERSION_H),    RegType::U8},
+     {(uint8_t*)&regs_.R_HARP_VERSION_L,   sizeof(regs_.R_HW_VERSION_L),      RegType::U8},
+     {(uint8_t*)&regs_.R_FW_VERSION_H,     sizeof(regs_.R_FW_VERSION_H),      RegType::U8},
+     {(uint8_t*)&regs_.R_FW_VERSION_L,     sizeof(regs_.R_FW_VERSION_L),      RegType::U8},
+     {(uint8_t*)&regs_.R_TIMESTAMP_SECOND, sizeof(regs_.R_TIMESTAMP_SECOND),  RegType::U32},
+     {(uint8_t*)&regs_.R_TIMESTAMP_MICRO,  sizeof(regs_.R_TIMESTAMP_MICRO),   RegType::U16},
+     {(uint8_t*)&regs_.R_OPERATION_CTRL,   sizeof(regs_.R_OPERATION_CTRL),    RegType::U8},
+     {(uint8_t*)&regs_.R_RESET_DEF,        sizeof(regs_.R_RESET_DEF),         RegType::U8},
+     {(uint8_t*)&regs_.R_DEVICE_NAME,      sizeof(regs_.R_DEVICE_NAME),       RegType::U8},
+     {(uint8_t*)&regs_.R_SERIAL_NUMBER,    sizeof(regs_.R_SERIAL_NUMBER),     RegType::U16},
+     {(uint8_t*)&regs_.R_CLOCK_CONFIG,     sizeof(regs_.R_CLOCK_CONFIG),      RegType::U8},
+     {(uint8_t*)&regs_.R_TIMESTAMP_OFFSET, sizeof(regs_.R_TIMESTAMP_OFFSET),  RegType::U8},
+     {(uint8_t*)&regs_.R_UUID, sizeof(regs_.R_UUID),  RegType::U8},
+     {(uint8_t*)&regs_.R_TAG, sizeof(regs_.R_TAG),  RegType::U8},
     };
 
     // Syntactic Sugar. Make bitfields for certain registers easier to access.

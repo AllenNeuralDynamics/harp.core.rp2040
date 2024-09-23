@@ -33,8 +33,7 @@ HarpCore::HarpCore(uint16_t who_am_i,
  heartbeat_interval_us_{HEARTBEAT_STANDBY_INTERVAL_US}
 {
     // Create a pointer to the first (and one-and-only) instance created.
-    if (self == nullptr)
-        self = this;
+    if (self == nullptr) self = this;
     tusb_init();
 #if defined(PICO_RP2040)
     // Populate Harp Core R_UUID with unique id from QSPI Flash.
@@ -66,8 +65,7 @@ void HarpCore::run()
     update_state();
     update_app_state(); // Does nothing unless a derived class implements it.
     process_cdc_input();
-    if (not new_msg_)
-        return;
+    if (not new_msg_) return;
 #ifdef DEBUG_HARP_MSG_IN
     msg_t msg = get_buffered_msg();
     printf("Msg data: \r\n");
@@ -88,8 +86,7 @@ void HarpCore::run()
 #endif
     // Handle in-range register msgs and clear them. Ignore out-of-range msgs.
     handle_buffered_core_message(); // Handle msg. Clear it if handled.
-    if (not new_msg_)
-        return;
+    if (not new_msg_) return;
     handle_buffered_app_message(); // Handle msg. Clear it if handled.
     // Always clear any unhandled messages, so we don't lock up.
     if (new_msg_)
@@ -107,8 +104,7 @@ void HarpCore::process_cdc_input()
     // TODO: scan for partial messages.
     // Fetch all data in the serial port. If it's at least a header's worth,
     // check the payload size and keep reading up to the end of the packet.
-    if (not tud_cdc_available())
-        return;
+    if (not tud_cdc_available()) return;
     // If the header has arrived, only read up to the full payload so we can
     // process one message at a time.
     uint32_t max_bytes_to_read = sizeof(rx_buffer_) - rx_buffer_index_;
@@ -123,16 +119,13 @@ void HarpCore::process_cdc_input()
                                        max_bytes_to_read);
     rx_buffer_index_ += bytes_read;
     // See if we have a message header's worth of data yet. Baily early if not.
-    if (total_bytes_read_ < sizeof(msg_header_t))
-        return;
+    if (total_bytes_read_ < sizeof(msg_header_t)) return;
     // Reinterpret contents of the rx buffer as a message header.
     msg_header_t& header = get_buffered_msg_header();
     // Bail early if the full message (with payload) has not fully arrived.
-    if (total_bytes_read_ < header.msg_size())
-        return;
+    if (total_bytes_read_ < header.msg_size()) return;
     rx_buffer_index_ = 0; // Reset buffer index for the next message.
     new_msg_ = true;
-    return;
 }
 
 msg_t HarpCore::get_buffered_msg()
@@ -151,8 +144,7 @@ void HarpCore::handle_buffered_core_message()
     // TODO: check checksum.
     // Note: PC-to-Harp msgs don't have timestamps, so we don't check for them.
     // Ignore out-of-range messages. Expect them to be handled by derived class.
-    if (msg.header.address > CORE_REG_COUNT)
-        return;
+    if (msg.header.address > CORE_REG_COUNT) return;
     // Handle read-or-write behavior.
     switch (msg.header.type)
     {
@@ -257,8 +249,7 @@ void HarpCore::update_state(bool force, op_mode_t forced_next_state)
 
 const RegSpecs& HarpCore::reg_address_to_specs(uint8_t address)
 {
-    if (address < CORE_REG_COUNT)
-        return regs_.address_to_specs[address];
+    if (address < CORE_REG_COUNT) return regs_.address_to_specs[address];
     return address_to_app_reg_specs(address); // virtual. Implemented by app.
 }
 
@@ -421,7 +412,9 @@ void HarpCore::write_timestamp_microsecond(msg_t& msg)
     // If synchronizer is attached, also update the synchronizer's time.
     set_harp_time_us_64(new_harp_time_us);
     if (self->sync_ != nullptr)
+    {
         self->sync_->set_harp_time_us_64(new_harp_time_us);
+    }
     self->offset_us_64_ = time_us_64() - new_harp_time_us;
     // Send harp reply.
     // Note: Harp timestamp registers will be updated before dispatching reply.
@@ -435,14 +428,12 @@ void HarpCore::write_operation_ctrl(msg_t& msg)
     // directly.
     const uint8_t& state = self->regs_.r_operation_ctrl_bits.OP_MODE;
     const uint8_t& next_state = (*((OperationCtrlBits*)(&write_byte))).OP_MODE;
-    if (state != next_state)
-        self->force_state((op_mode_t)next_state);
+    if (state != next_state) self->force_state((op_mode_t)next_state);
     // Update register state. Note: DUMP bit always reads as zero.
     self->regs.R_OPERATION_CTRL = write_byte & ~(0x01 << DUMP_OFFSET);
     self->set_visual_indicators(bool((write_byte >> VISUAL_EN_OFFSET) & 0x01));
     // Bail early if we are muted.
-    if (self->is_muted())
-        return;
+    if (self->is_muted()) return;
     // Tease out flags.
     bool DUMP = bool((write_byte >> DUMP_OFFSET) & 0x01);
     // Send WRITE reply.
@@ -471,8 +462,7 @@ void HarpCore::write_reset_dev(msg_t& msg)
     // TODO: unclear if this is the appropriate behavior.
     // Reset if specified to do so.
 #if defined(PICO_RP2040)
-    if (reset_dfu_bit)
-        reset_usb_boot(0,0);
+    if (reset_dfu_bit) reset_usb_boot(0,0);
 #else
 #pragma warning("Boot-to-DFU-mode via Harp Protocol not supported for this device.")
 #endif
@@ -482,8 +472,7 @@ void HarpCore::write_reset_dev(msg_t& msg)
         self->regs_.r_operation_ctrl_bits.OP_MODE = STANDBY;
         self->reset_app();
     }
-    else
-        send_harp_reply(WRITE, msg.header.address);
+    else send_harp_reply(WRITE, msg.header.address);
     // TODO: handle the other bit-specific operations.
 }
 

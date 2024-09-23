@@ -1,6 +1,7 @@
 #ifndef HARP_MESSAGE_H
 #define HARP_MESSAGE_H
-#include <reg_types.h>
+#include "reg_types.h"
+#include <stdint.h>
 
 #define MAX_PACKET_SIZE (255) // unused?
 
@@ -23,7 +24,7 @@ struct msg_header_t
     uint8_t raw_length;
     uint8_t address;
     uint8_t port; // should default to 255.
-    reg_type_t payload_type;
+    RegType payload_type;
 
     // (Inline) Member functions:
     bool has_timestamp()

@@ -13,10 +13,24 @@ endif()
 #option(DEBUG "If true, compile with added debug statements output to
 #              uart at 921600 baud" OFF)
 
+# Use clang-tidy for linting if installed.
+#find_program(CLANG_TIDY_EXE NAMES clang-tidy)
+#if(CLANG_TIDY_EXE)
+#    set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXE}"
+#        -checks=google-*,readability-*,-header-filter='${CMAKE_SOURCE_DIR}/src/*')
+#    message(STATUS "Found clang-tidy: ${CLANG_TIDY_EXE}")
+#else()
+#    message(WARNING "clang-tidy not found, skipping linting")
+#endif()
+
+set(CLANG_TIDY_COMMAND "${CLANG_TIDY_EXE}"
+    "-checks=google-*;-header-filter='${CMAKE_SOURCE_DIR}/*'")
+
 project(harp_core_rp2040)
 
+
 # Use modern conventions like std::invoke
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 add_library(core_registers
     src/core_registers.cpp
@@ -49,6 +63,8 @@ target_link_libraries(usb_desc tinyusb_device pico_unique_id pico_stdlib)
 target_link_libraries(harp_sync pico_stdlib)
 target_link_libraries(harp_core core_registers pico_stdlib tinyusb_device usb_desc)
 target_link_libraries(harp_c_app harp_core)
+
+set_target_properties(harp_core PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_COMMAND}")
 
 if(DEBUG)
     message(WARNING "Debug printf() messages from harp core to UART with baud \
