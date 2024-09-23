@@ -29,9 +29,24 @@
 // Added to disable resetting interface.
 #define PICO_STDIO_USB_ENABLE_RESET_VIA_VENDOR_INTERFACE 0
 
+
+// FIXME: can we get these into a header file?
+// Override "Raspberry Pi". Do this before including pico-related dependencies.
+#ifndef USBD_MANUFACTURER
+#define USBD_MANUFACTURER "Allen Institute"
+#endif
+
+// FIXME: can we get these into a header file?
+// Override "Pico". Do this before including pico-related dependencies.
+#ifndef USBD_PRODUCT
+#define USBD_PRODUCT "Harp Device"
+#endif
+
 #include "tusb.h"
 //#include "pico/stdio_usb/reset_interface.h"
 #include "pico/unique_id.h"
+
+#define USBD_DESC_STR_MAX (64) // Override default of 20 (max 127).
 
 #ifndef USBD_VID
 #define USBD_VID (0x2E8A) // Raspberry Pi
@@ -41,13 +56,6 @@
 #define USBD_PID (0x000a) // Raspberry Pi Pico SDK CDC
 #endif
 
-#ifndef USBD_MANUFACTURER
-#define USBD_MANUFACTURER "Raspberry Pi"
-#endif
-
-#ifndef USBD_PRODUCT
-#define USBD_PRODUCT "Pico"
-#endif
 
 #define TUD_RPI_RESET_DESC_LEN  9
 #if !PICO_STDIO_USB_ENABLE_RESET_VIA_VENDOR_INTERFACE
@@ -140,8 +148,7 @@ const uint8_t *tud_descriptor_configuration_cb(__unused uint8_t index) {
 }
 
 const uint16_t *tud_descriptor_string_cb(uint8_t index, __unused uint16_t langid) {
-    #define DESC_STR_MAX (20)
-    static uint16_t desc_str[DESC_STR_MAX];
+    static uint16_t desc_str[USBD_DESC_STR_MAX];
 
     // Assign the SN using the unique flash id
     if (!usbd_serial_str[0]) {
@@ -157,7 +164,7 @@ const uint16_t *tud_descriptor_string_cb(uint8_t index, __unused uint16_t langid
             return NULL;
         }
         const char *str = usbd_desc_str[index];
-        for (len = 0; len < DESC_STR_MAX - 1 && str[len]; ++len) {
+        for (len = 0; len < USBD_DESC_STR_MAX - 1 && str[len]; ++len) {
             desc_str[1 + len] = str[len];
         }
     }
