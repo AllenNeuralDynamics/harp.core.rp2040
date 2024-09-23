@@ -45,7 +45,7 @@ target_include_directories(harp_sync PUBLIC inc)
 target_include_directories(harp_core PUBLIC inc)
 
 
-target_link_libraries(usb_desc tinyusb_device pico_unique_id)
+target_link_libraries(usb_desc tinyusb_device pico_unique_id pico_stdlib)
 target_link_libraries(harp_sync pico_stdlib)
 target_link_libraries(harp_core core_registers pico_stdlib tinyusb_device usb_desc)
 target_link_libraries(harp_c_app harp_core)
