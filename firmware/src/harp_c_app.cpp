@@ -35,7 +35,7 @@ HarpCApp::HarpCApp(uint16_t who_am_i,
  reg_fns_{app_reg_fns},
  reg_count_{app_reg_count},
  update_fn_{update_fn},
- reset_fn_{update_fn},
+ reset_fn_{reset_fn},
  HarpCore(who_am_i, hw_version_major, hw_version_minor,
           assembly_version, harp_version_major, harp_version_minor,
           fw_version_major, fw_version_minor, serial_number, name, tag)
